@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { GetServerSideProps } from 'next'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import useSWR, { useSWRConfig } from 'swr'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -624,6 +626,7 @@ function DetailDrawer({
 }
 
 export default function BeneficiariosPage() {
+  const router = useRouter()
   const { mutate } = useSWRConfig()
 
   const [search, setSearch] = useState('')
@@ -697,13 +700,16 @@ export default function BeneficiariosPage() {
               {data?.total ?? 0} pessoa{data?.total !== 1 ? 's' : ''} cadastrada{data?.total !== 1 ? 's' : ''}
             </p>
           </div>
-          <button
-            onClick={() => { setEditItem(null); setShowForm(true) }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Novo beneficiário
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {typeof router.query.tenant === 'string' && <Link href={`/${router.query.tenant}/matriculas`} className="btn-ghost">Turmas e vagas</Link>}
+            <button
+              onClick={() => { setEditItem(null); setShowForm(true) }}
+              className="btn-primary flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Novo beneficiário
+            </button>
+          </div>
         </div>
         {editError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
 

@@ -514,6 +514,7 @@ enum FormaPagamento {
 
 enum ConectaMatriculaStatus {
   ATIVA
+  EM_ESPERA
   TRANCADA
   CONCLUIDA
 }
@@ -2728,6 +2729,7 @@ model Turma {
   project_id   String?
   professor_id String?
   nome         String
+  capacidade   Int?
   horario      Json?
   deleted_at   DateTime?
   created_at   DateTime    @default(now())
@@ -2749,6 +2751,9 @@ model Matricula {
   turma_id   String
   aluno_id   String
   status     ConectaMatriculaStatus @default(ATIVA)
+  solicitante_tipo String?
+  solicitante_nome String?
+  solicitante_contato String?
   created_at DateTime               @default(now())
   tenant     Tenant                 @relation(fields: [tenant_id], references: [id])
   turma      Turma                  @relation(fields: [turma_id], references: [id])
@@ -2759,6 +2764,7 @@ model Matricula {
 
   @@unique([turma_id, aluno_id])
   @@index([tenant_id])
+  @@index([turma_id, status, created_at])
   @@map("matriculas")
 }
 

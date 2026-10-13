@@ -20,6 +20,7 @@ import {
   Landmark,
   Plug,
   Package,
+  ClipboardList,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,6 +30,7 @@ const navItems = [
   { label: 'Projetos', icon: FolderKanban, href: 'projetos' },
   { label: 'Editais', icon: Megaphone, href: 'editais' },
   { label: 'Beneficiários', icon: Users, href: 'beneficiarios' },
+  { label: 'Matrículas', icon: ClipboardList, href: 'matriculas' },
   { label: 'Professores', icon: GraduationCap, href: 'professores' },
   { label: 'Financeiro', icon: DollarSign, href: 'financeiro' },
   { label: 'Estoque', icon: Package, href: 'estoque' },
