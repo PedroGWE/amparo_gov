@@ -21,6 +21,7 @@ import { TransferegovModule } from './modules/transferegov/transferegov.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
 import { PublicDataModule } from './modules/public-data/public-data.module'
+import { InventoryModule } from './modules/inventory/inventory.module'
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { PublicDataModule } from './modules/public-data/public-data.module'
     AccountabilityModule,
     TransferegovModule,
     PublicDataModule,
+    InventoryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -609,6 +609,8 @@ model Tenant {
   audit_logs                   AuditLog[]
   document_folders             DocumentFolder[]
   user_invites                 UserInvite[]
+  inventory_items              InventoryItem[]
+  inventory_movements          InventoryMovement[]
   institutional_doc_categories InstitutionalDocCategory[]
   institutional_documents      InstitutionalDocument[]
   organization_profile         OrganizationProfile?
@@ -670,6 +672,7 @@ model User {
   audit_logs              AuditLog[]
   activity_responsible    Activity[]
   sent_invites            UserInvite[]            @relation("InviteSender")
+  inventory_movements     InventoryMovement[]
   indicator_measurements  IndicatorMeasurement[]  @relation("MeasurementVerifier")
   created_indicators      Indicator[]
   created_transactions    Transaction[]           @relation("TransactionCreator")
@@ -2478,6 +2481,54 @@ model SystemSetting {
 // ============================================================
 // USER INVITES
 // ============================================================
+
+enum InventoryMovementType {
+  ENTRADA
+  SAIDA
+}
+
+model InventoryItem {
+  id               String   @id @default(cuid())
+  tenant_id        String
+  sku              String?
+  name             String
+  category         String?
+  unit             String   @default("UN")
+  location         String?
+  quantity         Decimal  @default(0) @db.Decimal(18, 3)
+  minimum_quantity Decimal  @default(0) @db.Decimal(18, 3)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  tenant     Tenant              @relation(fields: [tenant_id], references: [id])
+  movements InventoryMovement[]
+
+  @@unique([tenant_id, sku])
+  @@index([tenant_id, is_active])
+  @@index([tenant_id, name])
+  @@map("inventory_items")
+}
+
+model InventoryMovement {
+  id            String                @id @default(cuid())
+  tenant_id     String
+  item_id       String
+  type          InventoryMovementType
+  quantity      Decimal               @db.Decimal(18, 3)
+  balance_after Decimal               @db.Decimal(18, 3)
+  note          String?
+  created_by    String
+  created_at    DateTime              @default(now())
+
+  tenant Tenant        @relation(fields: [tenant_id], references: [id])
+  item   InventoryItem @relation(fields: [item_id], references: [id])
+  actor  User          @relation(fields: [created_by], references: [id])
+
+  @@index([tenant_id, created_at])
+  @@index([item_id, created_at])
+  @@map("inventory_movements")
+}
 
 model UserInvite {
   id          String       @id @default(cuid())

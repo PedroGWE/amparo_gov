@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   Landmark,
   Plug,
+  Package,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -30,6 +31,7 @@ const navItems = [
   { label: 'Beneficiários', icon: Users, href: 'beneficiarios' },
   { label: 'Professores', icon: GraduationCap, href: 'professores' },
   { label: 'Financeiro', icon: DollarSign, href: 'financeiro' },
+  { label: 'Estoque', icon: Package, href: 'estoque' },
   { label: 'Parcerias', icon: Handshake, href: 'parcerias' },
   { label: 'Transferegov', icon: Landmark, href: 'transferegov' },
   { label: 'Dados públicos', icon: Plug, href: 'integracoes' },
