@@ -144,7 +144,7 @@ export class BeneficiariosService {
         autorizacao_uso_imagem: dto.autorizacao_uso_imagem ?? false,
         documento_consentimento_url: dto.documento_consentimento_url ?? null,
         status: dto.status ?? 'ATIVO',
-        project_id: dto.project_id ?? null,
+        project_id: dto.project_id || null,
       },
       select: BENEFICIARIO_SELECT,
     }).catch((error: unknown) => {
@@ -205,7 +205,7 @@ export class BeneficiariosService {
         ...(dto.autorizacao_uso_imagem !== undefined && { autorizacao_uso_imagem: dto.autorizacao_uso_imagem }),
         ...(dto.documento_consentimento_url !== undefined && { documento_consentimento_url: dto.documento_consentimento_url ?? null }),
         ...(dto.status && { status: dto.status }),
-        ...(dto.project_id !== undefined && { project_id: dto.project_id ?? null }),
+        ...(dto.project_id !== undefined && { project_id: dto.project_id || null }),
       },
       select: BENEFICIARIO_SELECT,
     }).catch((error: unknown) => {

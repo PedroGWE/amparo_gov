@@ -47,6 +47,38 @@ function DetailItem({ label, value }: { label: string; value?: string | number |
 
 const STEPS = ['Dados Pessoais', 'Endereço', 'Turma / Escola', 'LGPD']
 
+function editDefaults(beneficiario: BeneficiarioDetail): Partial<CreateBeneficiarioInput> {
+  return {
+    name: beneficiario.name,
+    cpf: beneficiario.cpf ?? undefined,
+    birth_date: beneficiario.birth_date?.slice(0, 10) ?? undefined,
+    gender: beneficiario.gender ?? undefined,
+    telefone: beneficiario.telefone ?? undefined,
+    email: beneficiario.email ?? '',
+    rg_certidao: beneficiario.rg_certidao ?? undefined,
+    cep: beneficiario.cep ?? undefined,
+    logradouro: beneficiario.logradouro ?? undefined,
+    numero: beneficiario.numero ?? undefined,
+    complemento: beneficiario.complemento ?? undefined,
+    bairro: beneficiario.bairro ?? undefined,
+    cidade: beneficiario.cidade ?? undefined,
+    uf_endereco: beneficiario.uf_endereco ?? undefined,
+    turma: beneficiario.turma ?? undefined,
+    turno: beneficiario.turno ?? undefined,
+    escola: beneficiario.escola ?? undefined,
+    serie_ano: beneficiario.serie_ano ?? undefined,
+    necessidades_especiais: beneficiario.necessidades_especiais ?? undefined,
+    alergias: beneficiario.alergias ?? undefined,
+    medicamentos: beneficiario.medicamentos ?? undefined,
+    observacoes_gerais: beneficiario.observacoes_gerais ?? undefined,
+    termo_consentimento: beneficiario.termo_consentimento,
+    data_consentimento: beneficiario.data_consentimento?.slice(0, 10) ?? undefined,
+    autorizacao_uso_imagem: beneficiario.autorizacao_uso_imagem,
+    status: beneficiario.status,
+    project_id: beneficiario.project?.id ?? undefined,
+  }
+}
+
 function BeneficiarioForm({
   defaultValues,
   projects,
@@ -93,8 +125,21 @@ function BeneficiarioForm({
     }
   }
 
+  function showValidationErrors(invalid: Record<string, unknown>) {
+    const addressFields = ['cep', 'uf_endereco', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade']
+    const schoolFields = ['turma', 'turno', 'escola', 'serie_ano', 'necessidades_especiais', 'alergias', 'medicamentos', 'observacoes_gerais']
+    const consentFields = ['termo_consentimento', 'data_consentimento', 'autorizacao_uso_imagem']
+    const fields = Object.keys(invalid)
+    setStep(fields.some((field) => !addressFields.includes(field) && !schoolFields.includes(field) && !consentFields.includes(field))
+      ? 0
+      : fields.some((field) => addressFields.includes(field))
+        ? 1
+        : fields.some((field) => schoolFields.includes(field)) ? 2 : 3)
+    setSubmitError('Revise os campos indicados antes de salvar.')
+  }
+
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col h-full">
+    <form onSubmit={handleSubmit(submit, showValidationErrors)} className="flex flex-col h-full">
       {/* Steps */}
       <div className="flex gap-0 border-b border-gray-200 px-6 -mx-6 mb-6">
         {STEPS.map((label, i) => (
@@ -136,6 +181,7 @@ function BeneficiarioForm({
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Data de nascimento</label>
                 <input {...register('birth_date')} type="date" className="input w-full" />
+                {errors.birth_date && <p className="text-red-500 text-xs mt-0.5">Data de nascimento inválida</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Gênero</label>
@@ -145,6 +191,7 @@ function BeneficiarioForm({
                     <option key={g} value={g}>{GENDER_LABELS[g]}</option>
                   ))}
                 </select>
+                {errors.gender && <p className="text-red-500 text-xs mt-0.5">Selecione um gênero válido</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Telefone</label>
@@ -153,6 +200,7 @@ function BeneficiarioForm({
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">E-mail</label>
                 <input {...register('email')} type="email" className="input w-full" placeholder="email@exemplo.com" />
+                {errors.email && <p className="text-red-500 text-xs mt-0.5">{errors.email.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
@@ -161,6 +209,7 @@ function BeneficiarioForm({
                     <option key={s} value={s}>{BENEFICIARY_STATUS_LABELS[s]}</option>
                   ))}
                 </select>
+                {errors.project_id && <p className="text-red-500 text-xs mt-0.5">Selecione um projeto válido</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Projeto padrão</label>
@@ -181,10 +230,12 @@ function BeneficiarioForm({
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">CEP</label>
               <input {...register('cep')} className="input w-full" placeholder="00000-000" maxLength={8} />
+              {errors.cep && <p className="text-red-500 text-xs mt-0.5">Informe um CEP com até 8 dígitos</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">UF</label>
               <input {...register('uf_endereco')} className="input w-full" placeholder="SP" maxLength={2} />
+              {errors.uf_endereco && <p className="text-red-500 text-xs mt-0.5">Informe a UF com duas letras</p>}
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">Logradouro</label>
@@ -277,6 +328,7 @@ function BeneficiarioForm({
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Data do consentimento</label>
                   <input {...register('data_consentimento')} type="date" className="input w-full" />
+                  {errors.data_consentimento && <p className="text-red-500 text-xs mt-0.5">Data de consentimento inválida</p>}
                 </div>
               )}
               <label className="flex items-start gap-3 cursor-pointer">
@@ -578,7 +630,9 @@ export default function BeneficiariosPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState<Beneficiario | null>(null)
+  const [editItem, setEditItem] = useState<BeneficiarioDetail | null>(null)
+  const [editError, setEditError] = useState('')
+  const [loadingEditId, setLoadingEditId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
 
   const params: Record<string, string | number> = { page, limit: 20 }
@@ -618,9 +672,18 @@ export default function BeneficiariosPage() {
     mutate(['/beneficiarios', params])
   }
 
-  function openEdit(b: Beneficiario) {
-    setEditItem(b)
-    setShowForm(true)
+  async function openEdit(b: Beneficiario) {
+    setEditError('')
+    setLoadingEditId(b.id)
+    try {
+      const complete = await beneficiariosService.get(b.id)
+      setEditItem(complete)
+      setShowForm(true)
+    } catch {
+      setEditError('Não foi possível carregar os dados do beneficiário para edição. Tente novamente.')
+    } finally {
+      setLoadingEditId(null)
+    }
   }
 
   return (
@@ -642,6 +705,7 @@ export default function BeneficiariosPage() {
             Novo beneficiário
           </button>
         </div>
+        {editError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
 
         {/* Filters */}
         <div className="flex gap-3 flex-wrap">
@@ -712,7 +776,7 @@ export default function BeneficiariosPage() {
                     <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
                       <button onClick={() => setDetailId(b.id)} className="text-sm font-medium text-brand-700 hover:text-brand-800">Ver perfil completo</button>
                       <div className="flex gap-1">
-                        <button aria-label={`Editar ${b.name}`} onClick={() => openEdit(b)} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700"><Edit2 className="h-4 w-4" /></button>
+                        <button aria-label={`Editar ${b.name}`} onClick={() => openEdit(b)} disabled={loadingEditId === b.id} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700 disabled:opacity-50"><Edit2 className="h-4 w-4" /></button>
                         <button aria-label={`Remover ${b.name}`} onClick={() => handleDelete(b)} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
@@ -758,7 +822,7 @@ export default function BeneficiariosPage() {
       >
         <BeneficiarioForm
           key={editItem?.id ?? 'new'}
-          defaultValues={editItem as unknown as Partial<CreateBeneficiarioInput>}
+          defaultValues={editItem ? editDefaults(editItem) : undefined}
           projects={projects}
           onSubmit={handleCreate}
           onClose={() => { setShowForm(false); setEditItem(null) }}

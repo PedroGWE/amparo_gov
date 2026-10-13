@@ -39,10 +39,10 @@ export const PARENTESCO_LABELS: Record<ParentescoType, string> = {
 export const createBeneficiarioSchema = z.object({
   name: z.string().min(2).max(200),
   cpf: z.string().optional().nullable(),
-  birth_date: z.string().optional().nullable(),
-  gender: z.enum(GENDERS).optional().nullable(),
+  birth_date: z.preprocess((value) => value === '' ? null : value, z.string().optional().nullable()),
+  gender: z.preprocess((value) => value === '' ? null : value, z.enum(GENDERS).optional().nullable()),
   telefone: z.string().optional().nullable(),
-  email: z.string().email('E-mail inválido').optional().or(z.literal('').transform(() => undefined)),
+  email: z.preprocess((value) => value === '' ? null : value, z.string().email('E-mail inválido').optional().nullable()),
   rg_certidao: z.string().optional().nullable(),
   cep: z.string().max(8).optional().nullable(),
   logradouro: z.string().optional().nullable(),
@@ -60,10 +60,10 @@ export const createBeneficiarioSchema = z.object({
   medicamentos: z.string().optional().nullable(),
   observacoes_gerais: z.string().optional().nullable(),
   termo_consentimento: z.boolean().default(false),
-  data_consentimento: z.string().optional().nullable(),
+  data_consentimento: z.preprocess((value) => value === '' ? null : value, z.string().optional().nullable()),
   autorizacao_uso_imagem: z.boolean().default(false),
   status: z.enum(BENEFICIARY_STATUSES).default('ATIVO'),
-  project_id: z.string().optional().nullable(),
+  project_id: z.preprocess((value) => value === '' ? null : value, z.string().optional().nullable()),
 })
 export type CreateBeneficiarioInput = z.infer<typeof createBeneficiarioSchema>
 

@@ -51,41 +51,44 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.tenant.findUnique({ where: { slug: dto.tenantSlug } })
-    if (existing) throw new BadRequestException('Slug já utilizado')
-
-    const tenant = await this.prisma.tenant.create({
-      data: {
-        name: dto.tenantName,
-        slug: dto.tenantSlug,
-        type: dto.tenantType,
-        status: 'TRIAL',
-      },
-    })
-
-    const adminRole = await this.prisma.role.create({
-      data: {
-        tenant_id: tenant.id,
-        name: 'ADMIN',
-        is_system: true,
-        permissions: ['*'],
-      },
-    })
-
     const passwordHash = await bcrypt.hash(dto.password, 12)
-    const user = await this.prisma.user.create({
-      data: {
-        tenant_id: tenant.id,
-        name: dto.name,
-        email: dto.email,
-        password_hash: passwordHash,
-        status: 'ACTIVE',
-        user_roles: { create: { role_id: adminRole.id } },
-      },
-    })
-
-    const tokens = await this.generateTokens(user.id, tenant.id, user.email, ['*'])
-    return { ...tokens, user: { ...this.sanitizeUser(user), permissions: ['*'] } }
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const tenant = await tx.tenant.create({
+          data: {
+            name: dto.tenantName,
+            slug: dto.tenantSlug,
+            type: dto.tenantType,
+            status: 'TRIAL',
+          },
+        })
+        const adminRole = await tx.role.create({
+          data: {
+            tenant_id: tenant.id,
+            name: 'ADMIN',
+            is_system: true,
+            permissions: ['*'],
+          },
+        })
+        const user = await tx.user.create({
+          data: {
+            tenant_id: tenant.id,
+            name: dto.name,
+            email: dto.email,
+            password_hash: passwordHash,
+            status: 'ACTIVE',
+            user_roles: { create: { role_id: adminRole.id } },
+          },
+        })
+        const tokens = await this.generateTokens(user.id, tenant.id, user.email, ['*'], tx)
+        return { ...tokens, user: { ...this.sanitizeUser(user), permissions: ['*'] } }
+      })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('Slug já utilizado')
+      }
+      throw error
+    }
   }
 
   async refresh(tokenRaw: string) {
