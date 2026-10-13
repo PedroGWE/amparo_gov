@@ -146,6 +146,30 @@ export class EnrollmentService {
     })
   }
 
+  async deleteEnrollment(tenantId: string, enrollmentId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.matricula.findFirst({ where: { id: enrollmentId, tenant_id: tenantId }, select: { turma_id: true } })
+      if (!current) throw new NotFoundException('Inscrição não encontrada')
+      const turma = await this.lockClass(tx, tenantId, current.turma_id)
+      const enrollment = await tx.matricula.findFirst({ where: { id: enrollmentId, tenant_id: tenantId, turma_id: turma.id }, select: { status: true } })
+      if (!enrollment) throw new NotFoundException('Inscrição não encontrada')
+      await tx.matricula.delete({ where: { id: enrollmentId } })
+
+      let promoted = null
+      if (enrollment.status === 'ATIVA') {
+        const active = await tx.matricula.count({ where: { turma_id: turma.id, status: 'ATIVA' } })
+        if (turma.capacidade === null || active < turma.capacidade) {
+          const next = await tx.matricula.findFirst({ where: { turma_id: turma.id, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], select: { id: true, aluno: { select: { name: true } } } })
+          if (next) {
+            await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
+            promoted = next.aluno.name
+          }
+        }
+      }
+      return { deleted: enrollmentId, promoted }
+    })
+  }
+
   private async enrollLocked(tx: Prisma.TransactionClient, tenantId: string, turma: { id: string; nome: string; capacidade: number | null }, studentId: string, role: string, applicantName: string | null, applicantContact: string | null) {
     if (turma.capacidade === null) throw new BadRequestException('Defina a capacidade da turma antes de inscrever alunos')
     const existing = await tx.matricula.findUnique({ where: { turma_id_aluno_id: { turma_id: turma.id, aluno_id: studentId } }, select: { id: true } })
