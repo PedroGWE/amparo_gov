@@ -39,6 +39,7 @@ export class ReportsService {
       this.prisma.beneficiary.count({
         where: {
           tenant_id: tenantId,
+          deleted_at: null,
           ...(filter.project_id && {
             OR: [{ project_id: filter.project_id }, { vinculos_projetos: { some: { project_id: filter.project_id } } }],
           }),

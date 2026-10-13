@@ -1951,6 +1951,7 @@ model Beneficiary {
   created_by                  String?
   created_at                  DateTime          @default(now())
   updated_at                  DateTime          @updatedAt
+  deleted_at                  DateTime?
 
   // Relations
   tenant            Tenant                @relation(fields: [tenant_id], references: [id])
@@ -1964,6 +1965,7 @@ model Beneficiary {
 
   @@unique([tenant_id, cpf])
   @@index([tenant_id])
+  @@index([tenant_id, deleted_at])
   @@index([project_id])
   @@index([status])
   @@index([cpf])

@@ -48,6 +48,7 @@ export class BeneficiariosService {
     const limit = q.limit ?? 20
     const where: Prisma.BeneficiaryWhereInput = {
       tenant_id: tenantId,
+      deleted_at: null,
       ...(q.status && { status: q.status }),
       ...(q.turma && { turma: { contains: q.turma, mode: 'insensitive' } }),
       ...(q.project_id && {
@@ -81,7 +82,7 @@ export class BeneficiariosService {
 
   async findOne(tenantId: string, id: string) {
     const b = await this.prisma.beneficiary.findFirst({
-      where: { id, tenant_id: tenantId },
+      where: { id, tenant_id: tenantId, deleted_at: null },
       include: {
         project: { select: { id: true, name: true } },
         responsaveis: { orderBy: { created_at: 'asc' } },
@@ -217,18 +218,49 @@ export class BeneficiariosService {
   }
 
   async remove(tenantId: string, id: string) {
-    await this.assertBelongsToTenant(id, tenantId)
-    const activeVinculos = await this.prisma.beneficiarioProjeto.count({
-      where: { beneficiary_id: id, status: 'ATIVO' },
-    })
-    if (activeVinculos > 0) {
-      throw new ConflictException(
-        'Beneficiário possui vínculos ativos com projetos. Desvincule-o primeiro.',
-      )
-    }
-    await this.prisma.beneficiary.update({
-      where: { id },
-      data: { status: 'INATIVO' },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "beneficiaries" WHERE id = ${id} AND tenant_id = ${tenantId} FOR UPDATE`
+      const beneficiary = await tx.beneficiary.findFirst({
+        where: { id, tenant_id: tenantId, deleted_at: null },
+        select: { id: true },
+      })
+      if (!beneficiary) throw new NotFoundException('Beneficiário não encontrado')
+
+      const memberships = await tx.matricula.findMany({
+        where: { aluno_id: id, tenant_id: tenantId, status: { in: ['ATIVA', 'EM_ESPERA'] } },
+        select: { id: true, turma_id: true, status: true },
+      })
+      for (const classId of [...new Set(memberships.map((item) => item.turma_id))].sort()) {
+        await tx.$queryRaw`SELECT id FROM "turmas" WHERE id = ${classId} AND tenant_id = ${tenantId} FOR UPDATE`
+        const turma = await tx.turma.findFirst({ where: { id: classId, tenant_id: tenantId }, select: { capacidade: true } })
+        const activeMembership = memberships.some((item) => item.turma_id === classId && item.status === 'ATIVA')
+        await tx.matricula.updateMany({
+          where: { aluno_id: id, turma_id: classId, status: { in: ['ATIVA', 'EM_ESPERA'] } },
+          data: { status: 'CONCLUIDA' },
+        })
+        if (activeMembership && turma) {
+          const active = await tx.matricula.count({ where: { turma_id: classId, status: 'ATIVA' } })
+          if (turma.capacidade === null || active < turma.capacidade) {
+            const next = await tx.matricula.findFirst({
+              where: { turma_id: classId, status: 'EM_ESPERA' },
+              orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
+              select: { id: true },
+            })
+            if (next) await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
+          }
+        }
+      }
+
+      const now = new Date()
+      await tx.beneficiarioProjeto.updateMany({
+        where: { beneficiary_id: id, status: 'ATIVO' },
+        data: { status: 'DESLIGADO', data_desligamento: now },
+      })
+      await tx.beneficiary.update({
+        where: { id },
+        data: { status: 'INATIVO', deleted_at: now, cpf: null },
+      })
+      return { id, removed: true }
     })
   }
 
@@ -369,7 +401,7 @@ export class BeneficiariosService {
 
   private async assertBelongsToTenant(id: string, tenantId: string) {
     const b = await this.prisma.beneficiary.findFirst({
-      where: { id, tenant_id: tenantId },
+      where: { id, tenant_id: tenantId, deleted_at: null },
       select: { id: true },
     })
     if (!b) throw new NotFoundException('Beneficiário não encontrado')

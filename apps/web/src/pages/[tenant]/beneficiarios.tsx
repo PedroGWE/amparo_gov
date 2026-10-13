@@ -635,6 +635,8 @@ export default function BeneficiariosPage() {
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<BeneficiarioDetail | null>(null)
   const [editError, setEditError] = useState('')
+  const [removeMessage, setRemoveMessage] = useState('')
+  const [removingId, setRemovingId] = useState<string | null>(null)
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
 
@@ -670,9 +672,21 @@ export default function BeneficiariosPage() {
   }
 
   async function handleDelete(b: Beneficiario) {
-    if (!confirm(`Remover ${b.name}?`)) return
-    await beneficiariosService.remove(b.id)
-    mutate(['/beneficiarios', params])
+    if (!confirm(`Excluir o cadastro de ${b.name}? O aluno sairá da lista, de turmas e de projetos ativos.`)) return
+    setEditError('')
+    setRemoveMessage('')
+    setRemovingId(b.id)
+    try {
+      await beneficiariosService.remove(b.id)
+      if (detailId === b.id) setDetailId(null)
+      await mutate(['/beneficiarios', params])
+      setRemoveMessage(`Cadastro de ${b.name} excluído.`)
+    } catch (error) {
+      const responseMessage = axios.isAxiosError(error) ? error.response?.data?.message : undefined
+      setEditError(Array.isArray(responseMessage) ? responseMessage.join('. ') : typeof responseMessage === 'string' ? responseMessage : 'Não foi possível excluir o cadastro. Tente novamente.')
+    } finally {
+      setRemovingId(null)
+    }
   }
 
   async function openEdit(b: Beneficiario) {
@@ -712,6 +726,7 @@ export default function BeneficiariosPage() {
           </div>
         </div>
         {editError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
+        {removeMessage && <div role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{removeMessage}</div>}
 
         {/* Filters */}
         <div className="flex gap-3 flex-wrap">
@@ -783,7 +798,7 @@ export default function BeneficiariosPage() {
                       <button onClick={() => setDetailId(b.id)} className="text-sm font-medium text-brand-700 hover:text-brand-800">Ver perfil completo</button>
                       <div className="flex gap-1">
                         <button aria-label={`Editar ${b.name}`} onClick={() => openEdit(b)} disabled={loadingEditId === b.id} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700 disabled:opacity-50"><Edit2 className="h-4 w-4" /></button>
-                        <button aria-label={`Remover ${b.name}`} onClick={() => handleDelete(b)} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                        <button aria-label={`Excluir cadastro de ${b.name}`} title="Excluir cadastro" onClick={() => handleDelete(b)} disabled={removingId === b.id} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600 disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
                   </article>

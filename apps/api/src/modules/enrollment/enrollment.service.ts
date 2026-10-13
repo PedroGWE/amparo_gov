@@ -117,7 +117,7 @@ export class EnrollmentService {
   async enrollExisting(tenantId: string, classId: string, studentId: string) {
     return this.prisma.$transaction(async (tx) => {
       const turma = await this.lockClass(tx, tenantId, classId)
-      const student = await tx.beneficiary.findFirst({ where: { id: studentId, tenant_id: tenantId }, select: { id: true } })
+      const student = await tx.beneficiary.findFirst({ where: { id: studentId, tenant_id: tenantId, deleted_at: null }, select: { id: true } })
       if (!student) throw new NotFoundException('Aluno não encontrado')
       return this.enrollLocked(tx, tenantId, turma, studentId, 'ADMIN', null, null)
     })
