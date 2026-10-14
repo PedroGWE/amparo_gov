@@ -21,7 +21,7 @@ export interface Project {
   created_at: string
   updated_at: string
   manager?: { id: string; name: string; email: string }
-  _count: { members: number; tasks: number; phases: number }
+  _count: { members: number; tasks: number; phases: number; beneficiario_vinculos: number }
   task_progress?: { total: number; completed: number; overdue: number }
 }
 
@@ -63,6 +63,37 @@ export interface ProjectOverview {
   projects: { total: number; executing: number; completed: number; planning: number }
   budget: { planned: number; approved: number }
   tasks: { total: number; completed: number; open: number; overdue: number }
+  operations: { students: number; classes: number; presentToday: number; absentToday: number }
+}
+
+export interface ProjectStudent {
+  id: string
+  name: string
+  status: string
+  turma: string | null
+  vinculos_projetos: { id: string; project_id: string; project: { name: string } }[]
+}
+
+export interface ProjectClass {
+  id: string
+  nome: string
+  capacidade: number | null
+  horario: unknown
+  matriculas: { id: string; status: 'ATIVA' | 'EM_ESPERA'; aluno: { id: string; name: string } }[]
+  atividades: { id: string; titulo: string; descricao: string | null; prazo: string | null; status: string }[]
+  attendance30d: { present: number; absent: number }
+}
+
+export interface ProjectManagement {
+  students: ProjectStudent[]
+  classes: ProjectClass[]
+  summary: { students: number; classes: number; routines: number }
+}
+
+export interface AttendanceRow {
+  id: string
+  aluno: { id: string; name: string }
+  presente: boolean | null
 }
 
 export interface ProjectsPage {
@@ -121,4 +152,18 @@ export const projectsService = {
     api.patch(`/projects/${id}/tasks/${taskId}`, dto).then((r) => r.data),
 
   members: (id: string) => api.get(`/projects/${id}/members`).then((r) => r.data),
+
+  management: (id: string): Promise<ProjectManagement> => api.get(`/projects/${id}/management`).then((r) => r.data),
+  searchStudents: (id: string, q: string): Promise<{ id: string; name: string; turma: string | null }[]> =>
+    api.get(`/projects/${id}/students/search`, { params: { q } }).then((r) => r.data),
+  linkStudent: (id: string, beneficiary_id: string) => api.post(`/projects/${id}/students`, { beneficiary_id }).then((r) => r.data),
+  unlinkStudent: (id: string, studentId: string) => api.delete(`/projects/${id}/students/${studentId}`),
+  createClass: (id: string, dto: { nome: string; capacidade: number; horario?: string }) => api.post(`/projects/${id}/classes`, dto).then((r) => r.data),
+  enrollStudent: (id: string, classId: string, studentId: string) => api.post(`/projects/${id}/classes/${classId}/students/${studentId}`).then((r) => r.data),
+  attendance: (id: string, classId: string, date: string): Promise<AttendanceRow[]> =>
+    api.get(`/projects/${id}/classes/${classId}/attendance`, { params: { date } }).then((r) => r.data),
+  saveAttendance: (id: string, classId: string, data: string, presencas: { matricula_id: string; presente: boolean }[]) =>
+    api.post(`/projects/${id}/classes/${classId}/attendance`, { data, presencas }).then((r) => r.data),
+  createRoutine: (id: string, classId: string, dto: { titulo: string; descricao?: string; prazo?: string }) =>
+    api.post(`/projects/${id}/classes/${classId}/routine`, dto).then((r) => r.data),
 }

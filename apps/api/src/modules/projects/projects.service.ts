@@ -31,7 +31,7 @@ const PROJECT_SELECT = {
   created_at: true,
   updated_at: true,
   manager: { select: { id: true, name: true, email: true, avatar_url: true } },
-  _count: { select: { members: true, tasks: true, phases: true } },
+  _count: { select: { members: true, tasks: true, phases: true, beneficiario_vinculos: { where: { status: 'ATIVO' } } } },
 } satisfies Prisma.ProjectSelect
 
 @Injectable()
@@ -41,7 +41,10 @@ export class ProjectsService {
   async overview(tenantId: string) {
     const projectWhere: Prisma.ProjectWhereInput = { tenant_id: tenantId, deleted_at: null }
     const taskWhere: Prisma.ProjectTaskWhereInput = { project: { tenant_id: tenantId, deleted_at: null } }
-    const [total, executing, completed, planning, budget, taskGroups, overdueTasks] = await Promise.all([
+    const today = new Date()
+    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+    const tomorrow = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+    const [total, executing, completed, planning, budget, taskGroups, overdueTasks, students, classes, attendanceToday] = await Promise.all([
       this.prisma.project.count({ where: projectWhere }),
       this.prisma.project.count({ where: { ...projectWhere, status: 'EM_EXECUCAO' } }),
       this.prisma.project.count({ where: { ...projectWhere, status: 'CONCLUIDO' } }),
@@ -55,6 +58,9 @@ export class ProjectsService {
           status: { notIn: ['CONCLUIDA', 'CANCELADA'] },
         },
       }),
+      this.prisma.beneficiary.count({ where: { tenant_id: tenantId, deleted_at: null, vinculos_projetos: { some: { status: 'ATIVO', project: { deleted_at: null } } } } }),
+      this.prisma.turma.count({ where: { tenant_id: tenantId, deleted_at: null, project: { deleted_at: null } } }),
+      this.prisma.presenca.groupBy({ by: ['presente'], where: { tenant_id: tenantId, turma: { deleted_at: null, project: { deleted_at: null } }, data: { gte: todayStart, lt: tomorrow } }, _count: { _all: true } }),
     ])
     const taskCounts = Object.fromEntries(taskGroups.map((group) => [group.status, group._count._all]))
     const totalTasks = Object.values(taskCounts).reduce((sum, count) => sum + count, 0)
@@ -68,6 +74,7 @@ export class ProjectsService {
         open: totalTasks - completedTasks - (taskCounts.CANCELADA ?? 0),
         overdue: overdueTasks,
       },
+      operations: { students, classes, presentToday: attendanceToday.find((row) => row.presente)?._count._all ?? 0, absentToday: attendanceToday.find((row) => !row.presente)?._count._all ?? 0 },
     }
   }
 

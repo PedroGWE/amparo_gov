@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import axios from 'axios'
-import { Plus, Search, FolderKanban, CalendarDays, CircleDollarSign, ListTodo, AlertTriangle, CheckCircle2, Clock3 } from 'lucide-react'
+import { Plus, Search, FolderKanban, CalendarDays, CircleDollarSign, ListTodo, AlertTriangle, CheckCircle2, Clock3, UsersRound, GraduationCap, CalendarCheck2 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import { ProjectManagementPanel } from '@/components/projects/ProjectManagementPanel'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { PageSpinner } from '@/components/ui/Spinner'
@@ -249,16 +250,20 @@ export default function ProjetosPage() {
         <div>
           <p className="text-sm font-medium text-emerald-700">Gestão de projetos sociais</p>
           <h1 className="mt-1 text-2xl font-semibold text-gray-900">Projetos</h1>
-          <p className="mt-1 text-sm text-gray-500">Acompanhe entregas, prazos, orçamento e pendências em um só lugar.</p>
+          <p className="mt-1 text-sm text-gray-500">Acompanhe alunos, turmas, chamada, rotina, entregas e prazos em um só lugar.</p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" /> Novo projeto
         </button>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard label="Projetos" value={overview?.projects.total ?? '—'} icon={<FolderKanban className="h-5 w-5" />} />
         <SummaryCard label="Em execução" value={overview?.projects.executing ?? '—'} icon={<Clock3 className="h-5 w-5" />} tone="blue" />
+        <SummaryCard label="Alunos vinculados" value={overview?.operations.students ?? '—'} icon={<UsersRound className="h-5 w-5" />} tone="green" />
+        <SummaryCard label="Turmas" value={overview?.operations.classes ?? '—'} icon={<GraduationCap className="h-5 w-5" />} tone="blue" />
+        <SummaryCard label="Presentes hoje" value={overview?.operations.presentToday ?? '—'} icon={<CalendarCheck2 className="h-5 w-5" />} tone="green" />
+        <SummaryCard label="Faltas hoje" value={overview?.operations.absentToday ?? '—'} icon={<CalendarDays className="h-5 w-5" />} tone={(overview?.operations.absentToday ?? 0) > 0 ? 'amber' : 'gray'} />
         <SummaryCard label="Tarefas em aberto" value={overview?.tasks.open ?? '—'} icon={<ListTodo className="h-5 w-5" />} tone="amber" />
         <SummaryCard label="Prazos vencidos" value={overview?.tasks.overdue ?? '—'} icon={<AlertTriangle className="h-5 w-5" />} tone={(overview?.tasks.overdue ?? 0) > 0 ? 'red' : 'green'} />
         <SummaryCard label="Orçamento planejado" value={formatCurrency(overview?.budget.planned)} icon={<CircleDollarSign className="h-5 w-5" />} tone="green" />
@@ -303,11 +308,11 @@ export default function ProjetosPage() {
         </div>
       ) : (
         <>
-          <div className="card p-0 overflow-hidden">
+          <div className="card overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Projeto', 'Área', 'Situação', 'Atividades', 'Prazo', 'Orçamento', 'Equipe'].map((h) => (
+                  {['Projeto', 'Área', 'Situação', 'Vínculos ativos', 'Atividades', 'Prazo', 'Orçamento', 'Equipe'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -321,6 +326,7 @@ export default function ProjetosPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">{TYPE_LABELS[p.type]}</td>
                     <td className="px-4 py-3"><Badge value={p.status} /></td>
+                    <td className="px-4 py-3 text-gray-700">{p._count.beneficiario_vinculos}</td>
                     <td className="px-4 py-3">
                       {p.task_progress?.total ? <>
                         <div className="flex items-center justify-between text-xs text-gray-600"><span>{p.task_progress.completed}/{p.task_progress.total} concluídas</span><span>{Math.round(p.task_progress.completed * 100 / p.task_progress.total)}%</span></div>
@@ -359,7 +365,7 @@ export default function ProjetosPage() {
         </>
       )}
 
-      <Modal open={Boolean(activeProject)} onClose={() => setActiveProject(null)} title="Acompanhamento do projeto">
+      <Modal open={Boolean(activeProject)} onClose={() => setActiveProject(null)} title="Acompanhamento do projeto" size="lg">
         {activeProject && <div className="max-h-[75vh] space-y-5 overflow-y-auto pr-1">
           <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -375,6 +381,8 @@ export default function ProjetosPage() {
           </div>
 
           {workspaceError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{workspaceError}</div>}
+
+          <ProjectManagementPanel projectId={activeProject.id} />
 
           <section className="rounded-xl border border-gray-200 p-4">
             <div className="mb-3"><h4 className="font-semibold text-gray-900">Situação e orçamento</h4><p className="text-xs text-gray-500">Atualize o status operacional e o orçamento planejado.</p></div>

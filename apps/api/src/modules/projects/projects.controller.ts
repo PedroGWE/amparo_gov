@@ -11,6 +11,8 @@ import {
   Query,
 } from '@nestjs/common'
 import { ProjectsService } from './projects.service'
+import { ProjectManagementService } from './project-management.service'
+import { CreateProjectClassDto, CreateProjectRoutineDto, LinkProjectStudentDto, SaveProjectAttendanceDto } from './dto/project-management.dto'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { UpdateProjectDto } from './dto/update-project.dto'
 import { QueryProjectsDto } from './dto/query-projects.dto'
@@ -26,7 +28,7 @@ import type { JwtPayload } from '../auth/types/jwt-payload'
 
 @Controller('projects')
 export class ProjectsController {
-  constructor(private projects: ProjectsService) {}
+  constructor(private projects: ProjectsService, private management: ProjectManagementService) {}
 
   // ── Projects ──────────────────────────────────────────────────
 
@@ -49,6 +51,57 @@ export class ProjectsController {
   @Get(':id')
   findOne(@CurrentUser('tenantId') tid: string, @Param('id') id: string) {
     return this.projects.findOne(tid, id)
+  }
+
+  @Get(':id/management')
+  managementDashboard(@CurrentUser('tenantId') tid: string, @Param('id') id: string) {
+    return this.management.dashboard(tid, id)
+  }
+
+  @Get(':id/students/search')
+  searchStudents(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Query('q') q = '') {
+    return this.management.searchStudents(tid, id, q)
+  }
+
+  @Post(':id/students')
+  @RequirePermissions('projects:update')
+  linkStudent(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Body() dto: LinkProjectStudentDto) {
+    return this.management.linkStudent(tid, id, dto.beneficiary_id)
+  }
+
+  @Delete(':id/students/:studentId')
+  @RequirePermissions('projects:update')
+  unlinkStudent(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Param('studentId') studentId: string) {
+    return this.management.unlinkStudent(tid, id, studentId)
+  }
+
+  @Post(':id/classes')
+  @RequirePermissions('projects:update')
+  createClass(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Body() dto: CreateProjectClassDto) {
+    return this.management.createClass(tid, id, dto)
+  }
+
+  @Post(':id/classes/:classId/students/:studentId')
+  @RequirePermissions('projects:update')
+  enrollStudent(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Param('classId') classId: string, @Param('studentId') studentId: string) {
+    return this.management.enrollStudent(tid, id, classId, studentId)
+  }
+
+  @Get(':id/classes/:classId/attendance')
+  attendance(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Param('classId') classId: string, @Query('date') date: string) {
+    return this.management.attendance(tid, id, classId, date)
+  }
+
+  @Post(':id/classes/:classId/attendance')
+  @RequirePermissions('projects:update')
+  saveAttendance(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Param('classId') classId: string, @Body() dto: SaveProjectAttendanceDto) {
+    return this.management.saveAttendance(tid, id, classId, dto)
+  }
+
+  @Post(':id/classes/:classId/routine')
+  @RequirePermissions('projects:update')
+  createRoutine(@CurrentUser('tenantId') tid: string, @Param('id') id: string, @Param('classId') classId: string, @Body() dto: CreateProjectRoutineDto) {
+    return this.management.createRoutine(tid, id, classId, dto)
   }
 
   @Patch(':id')
