@@ -3,8 +3,6 @@
 set -euo pipefail
 
 REPO_DIR="/var/www/cidadao-futuro"
-NGINX_CONF="/etc/nginx/sites-available/projeto.gtmcorepro.com"
-NGINX_ENABLED="/etc/nginx/sites-enabled/projeto.gtmcorepro.com"
 
 cd "$REPO_DIR"
 
@@ -33,14 +31,7 @@ cd apps/web
 pnpm build
 cd "$REPO_DIR"
 
-echo "=== 6. Configurando Nginx ==="
-if systemctl is-active --quiet nginx; then
-  sudo cp infra/nginx/projeto.gtmcorepro.com.conf "$NGINX_CONF"
-  sudo ln -sf "$NGINX_CONF" "$NGINX_ENABLED"
-  sudo nginx -t && sudo systemctl reload nginx
-else
-  echo "Nginx do host inativo; mantendo o proxy reverso externo/containerizado."
-fi
+echo "=== 6. Proxy reverso gerenciado pelo Traefik Swarm ==="
 
 echo "=== 7. Reiniciando processos PM2 ==="
 pm2 startOrRestart infra/pm2/ecosystem.config.js --only cidadao-api --env production --update-env

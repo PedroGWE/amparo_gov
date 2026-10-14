@@ -2,11 +2,11 @@
 
 ## Instalação atual (Hostinger)
 
-- Host: `72.60.248.57` (`projeto.gtmcorepro.com`).
+- Host: `72.60.248.57` (`app.amparogov.org`).
 - Repositório: `/var/www/cidadao-futuro`.
 - Processos: `cidadao-api` e `cidadao-web` sob PM2.
 - PostgreSQL e Redis: serviços locais, sem publicação externa do banco.
-- HTTP/HTTPS: proxy reverso containerizado. O script somente recarrega Nginx quando o serviço do host estiver ativo.
+- HTTP/HTTPS: Traefik Swarm com certificado Let's Encrypt e rota definida em `infra/docker/docker-stack.production.yml`.
 - Backups de deploy: `/var/backups/semevo/<data-hora>/` com dump, ambientes protegidos e release anterior.
 
 Nunca registre senha SSH ou conteúdo de `.env` neste documento ou no Git.
@@ -17,10 +17,8 @@ Nunca registre senha SSH ou conteúdo de `.env` neste documento ou no Git.
 - Node.js 20 LTS
 - pnpm 9
 - PM2
-- Nginx
 - PostgreSQL 16 padrão (local ou externo; sem extensão obrigatória)
 - Redis 7 (local ou externo)
-- Certificado SSL (Let's Encrypt via Certbot)
 
 ## Configuração Inicial do Servidor
 
@@ -35,11 +33,6 @@ npm install -g pnpm
 # Instalar PM2
 npm install -g pm2
 
-# Instalar Nginx
-sudo apt-get install -y nginx
-
-# Instalar Certbot
-sudo apt-get install -y certbot python3-certbot-nginx
 ```
 
 ## Deploy da Aplicação
@@ -70,19 +63,15 @@ pm2 save
 pm2 startup
 ```
 
-## Configuração do Nginx
+## Configuração do proxy reverso
 
 ```bash
-# Copiar configuração
-sudo cp infra/nginx/projeto.gtmcorepro.com.conf /etc/nginx/sites-available/cidadao-do-futuro
-sudo ln -s /etc/nginx/sites-available/cidadao-do-futuro /etc/nginx/sites-enabled/
-
-# Obter certificado SSL
-sudo certbot --nginx -d seu-dominio.com.br
-
-# Recarregar Nginx
-sudo nginx -t && sudo systemctl reload nginx
+# Aplicar a rota de app.amparogov.org no Traefik Swarm
+sudo docker stack deploy -c infra/docker/docker-stack.production.yml cidadao-futuro
 ```
+
+O Traefik emite e renova o certificado TLS automaticamente. A configuração do
+stack também está copiada no VPS em `/root/cidadao-futuro/docker-stack.yml`.
 
 ## Variáveis de Ambiente de Produção (`apps/api/.env`)
 
@@ -103,7 +92,7 @@ JWT_REFRESH_EXPIRES_IN=7d
 REDIS_URL=redis://:senha@localhost:6379
 
 # CORS
-CORS_ORIGINS=https://seu-dominio.com.br
+CORS_ORIGINS=https://app.amparogov.org
 ```
 
 ## Atualização (Deploy Contínuo)
