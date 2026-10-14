@@ -95,3 +95,26 @@ jobs:
             -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
             'cd /var/www/cidadao-futuro && git fetch origin main && git pull --ff-only origin main && exec bash infra/scripts/deploy.sh'
+
+  inspect-host:
+    name: Inspect production proxy
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/educa-release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Inspect stack
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes "$SSH_USER@$SSH_HOST" 'docker stack ls --format "{{.Name}}"; docker service ls --format "{{.Name}}"; docker service inspect cidadao_app --format "{{json .Spec.Labels}}" 2>/dev/null || true; systemctl is-active nginx || true'

@@ -14,7 +14,7 @@ services:
       replicas: 1
       labels:
         - traefik.enable=true
-        - traefik.http.routers.cidadao.rule=Host(`app.amparogov.org`)
+        - traefik.http.routers.cidadao.rule=Host(`app.amparogov.org`) || Host(`educa.amparogov.org`)
         - traefik.http.routers.cidadao.entrypoints=websecure
         - traefik.http.routers.cidadao.tls=true
         - traefik.http.routers.cidadao.tls.certresolver=letsencryptresolver
