@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    image: nginx:alpine
+    networks:
+      - Vidrofy
+    configs:
+      - source: cidadao_nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.cidadao.rule=Host(`projeto.gtmcorepro.com`) || Host(`app.amparogov.org`)
+        - traefik.http.routers.cidadao.entrypoints=websecure
+        - traefik.http.routers.cidadao.tls=true
+        - traefik.http.routers.cidadao.tls.certresolver=letsencryptresolver
+        - traefik.http.services.cidadao.loadbalancer.server.port=80
+        - traefik.docker.network=Vidrofy
+
+configs:
+  cidadao_nginx_conf:
+    external: true
+
+networks:
+  Vidrofy:
+    external: true
