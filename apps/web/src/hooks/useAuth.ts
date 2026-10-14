@@ -1,3 +1,4 @@
+import { mutate } from 'swr'
 import { useRouter } from 'next/router'
 import Cookies from 'js-cookie'
 import api, { setAccessToken } from '@/lib/api'
@@ -7,13 +8,22 @@ export function useAuth() {
   const router = useRouter()
   const { user, tenantSlug, setAuth, clear } = useAuthStore()
 
-  async function login(email: string, password: string, slug: string) {
+  async function login(
+    email: string,
+    password: string,
+    slug: string,
+    portal?: 'aluno' | 'professor',
+  ) {
     const { data } = await api.post('/auth/login', {
-      email: email.trim().toLowerCase(),
+      ...(portal === 'aluno'
+        ? { matricula: email.trim().toUpperCase() }
+        : { email: email.trim().toLowerCase() }),
+      ...(portal ? { portal } : {}),
       password,
       tenantSlug: slug.trim().toLowerCase(),
     })
 
+    await mutate(() => true, undefined, { revalidate: false })
     setAccessToken(data.accessToken)
     Cookies.set('refresh_token', data.refreshToken, { expires: 7, sameSite: 'strict' })
     Cookies.set('tenant_slug', slug, { expires: 7, sameSite: 'strict' })
@@ -21,7 +31,17 @@ export function useAuth() {
       localStorage.setItem('auth_user', JSON.stringify(data.user))
     }
     setAuth(data.user, slug)
-    await router.push(`/${slug}/dashboard`)
+    const perms: string[] = data.user.permissions ?? []
+    const destination =
+      portal ??
+      (perms.includes('*') || perms.includes('educa:manage')
+        ? null
+        : perms.includes('conecta:teacher')
+          ? 'professor'
+          : perms.includes('conecta:student')
+            ? 'aluno'
+            : null)
+    await router.push(`/${slug}/${destination ? destination : 'dashboard'}`)
   }
 
   async function logout() {
@@ -34,7 +54,9 @@ export function useAuth() {
     Cookies.remove('tenant_slug')
     if (typeof window !== 'undefined') localStorage.removeItem('auth_user')
     clear()
-    await router.push('/login')
+    await mutate(() => true, undefined, { revalidate: false })
+    const educationRoute = /\/(educa|professor|aluno)(\/|$)/.test(router.asPath)
+    await router.push(educationRoute ? '/educa' : '/login')
   }
 
   return { user, tenantSlug, login, logout, isAuthenticated: !!user }

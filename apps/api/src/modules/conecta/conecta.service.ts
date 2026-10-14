@@ -10,7 +10,7 @@ export class ConectaService {
       where: {
         tenant_id: tenantId,
         status: 'ATIVA',
-        aluno: { created_by: userId },
+        aluno: { user_id: userId },
       },
       select: {
         id: true,
@@ -38,7 +38,7 @@ export class ConectaService {
               titulo: true,
               prazo: true,
               turma: { select: { nome: true } },
-              entregas: { where: { matricula: { aluno: { created_by: userId } } }, select: { status: true } },
+              entregas: { where: { matricula: { aluno: { user_id: userId } } }, select: { status: true } },
             },
           })
         : Promise.resolve([]),

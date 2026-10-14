@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { EducaModule } from './modules/educa/educa.module'
 import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import envConfig from './config/env'
@@ -39,6 +40,7 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module'
     BeneficiariosModule,
     ProfessoresModule,
     ConectaModule,
+    EducaModule,
     ReportsModule,
     PartnershipsModule,
     AccountabilityModule,

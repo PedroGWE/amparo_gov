@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/register', '/_next', '/favicon.ico', '/api']
+const PUBLIC_PATHS = ['/login', '/register', '/educa', '/_next', '/favicon.ico', '/api']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  if (request.headers.get('host')?.split(':')[0] === 'educa.amparogov.org' && pathname === '/') {
+    const educaUrl = request.nextUrl.clone()
+    educaUrl.pathname = '/educa'
+    return NextResponse.redirect(educaUrl)
+  }
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname === '/'
 
   if (!isPublic && !request.cookies.get('refresh_token')) {

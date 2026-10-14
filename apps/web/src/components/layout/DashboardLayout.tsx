@@ -26,6 +26,7 @@ import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 
 const navItems = [
+  { label: 'Educa Amparo Gov', icon: GraduationCap, href: 'educa' },
   { label: 'Dashboard', icon: LayoutDashboard, href: 'dashboard' },
   { label: 'Projetos', icon: FolderKanban, href: 'projetos' },
   { label: 'Editais', icon: Megaphone, href: 'editais' },

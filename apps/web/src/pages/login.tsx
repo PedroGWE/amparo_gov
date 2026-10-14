@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -103,6 +104,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          <Link href="/educa" className="block text-center mt-5 text-sm text-brand-700">Professor ou aluno? Acesse o Educa Amparo Gov</Link>
         </div>
       </div>
     </div>

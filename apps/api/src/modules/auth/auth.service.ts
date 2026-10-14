@@ -27,8 +27,9 @@ export class AuthService {
     const tenant = await this.prisma.tenant.findUnique({ where: { slug: dto.tenantSlug } })
     if (!tenant || tenant.deleted_at) throw new NotFoundException('Tenant não encontrado')
 
-    const user = await this.prisma.user.findUnique({
-      where: { tenant_id_email: { tenant_id: tenant.id, email: dto.email } },
+    if ((!dto.email && !dto.matricula) || (dto.email && dto.matricula)) throw new UnauthorizedException('Credenciais inválidas')
+    const user = await this.prisma.user.findFirst({
+      where: { tenant_id: tenant.id, ...(dto.matricula ? { student_code: dto.matricula.toUpperCase() } : { email: dto.email!.trim().toLowerCase() }) },
       include: {
         user_roles: { include: { role: { select: { permissions: true } } } },
       },
@@ -40,6 +41,9 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Credenciais inválidas')
 
     const permissions = this.extractPermissions(user.user_roles)
+    const allowed = permissions.includes('*') || permissions.includes(dto.portal === 'aluno' ? 'conecta:student' : 'conecta:teacher')
+    if ((dto.portal === 'aluno' || dto.portal === 'professor') && !allowed) throw new UnauthorizedException('Seu cadastro não possui acesso a este portal.')
+    if (dto.portal === 'aluno' && !await this.prisma.beneficiary.count({ where: { user_id: user.id, tenant_id: tenant.id, status: 'ATIVO' } })) throw new UnauthorizedException('Vínculo de aluno inativo.')
     const tokens = await this.generateTokens(user.id, tenant.id, user.email, permissions)
 
     await this.prisma.user.update({

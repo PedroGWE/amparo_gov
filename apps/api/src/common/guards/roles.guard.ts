@@ -14,7 +14,6 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ])
-    if (!required?.length) return true
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -24,6 +23,21 @@ export class RolesGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<FastifyRequest & { user: JwtPayload }>()
     const userPerms: string[] = req.user?.permissions ?? []
+    const educationOnly =
+      userPerms.length > 0 &&
+      userPerms.every((p) => ['conecta:teacher', 'conecta:student'].includes(p))
+    const controllerName = context.getClass().name
+    if (
+      educationOnly &&
+      ![
+        'AuthController',
+        'EducaController',
+        'ConectaTeacherController',
+        'ConectaStudentController',
+      ].includes(controllerName)
+    )
+      return false
+    if (!required?.length) return true
     if (userPerms.includes('*')) return true
     return required.every((p) => userPerms.includes(p))
   }

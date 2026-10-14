@@ -3,7 +3,7 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useEffect } from 'react'
 import Cookies from 'js-cookie'
-import api, { setAccessToken } from '@/lib/api'
+import { refreshSession } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -15,11 +15,8 @@ export default function App({ Component, pageProps }: AppProps) {
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('auth_user') : null
 
     if (refreshToken && storedUser && !user) {
-      api
-        .post('/auth/refresh', { refreshToken })
-        .then(({ data }) => {
-          setAccessToken(data.accessToken)
-          Cookies.set('refresh_token', data.refreshToken, { expires: 7, sameSite: 'strict' })
+      refreshSession()
+        .then(() => {
           setAuth(JSON.parse(storedUser), tenantSlug || '')
         })
         .catch(() => {

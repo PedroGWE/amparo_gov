@@ -637,6 +637,9 @@ model Tenant {
 }
 
 model User {
+  student_code String?
+  beneficiary Beneficiary? @relation("StudentAccount")
+  professor_profile Professor? @relation("TeacherAccount")
   id                String     @id @default(cuid())
   tenant_id         String
   email             String
@@ -682,6 +685,7 @@ model User {
   validated_invoices      Invoice[]
   institutional_documents InstitutionalDocument[] @relation("InstitutionalDocUploader")
 
+  @@unique([tenant_id, student_code])
   @@unique([tenant_id, email])
   @@index([tenant_id])
   @@index([email])
@@ -1908,6 +1912,8 @@ model IndicatorMeasurement {
 }
 
 model Beneficiary {
+  user_id String? @unique
+  user User? @relation("StudentAccount", fields: [user_id], references: [id])
   id                          String            @id @default(cuid())
   tenant_id                   String
   project_id                  String?
@@ -2649,6 +2655,8 @@ model BeneficiarioProjeto {
 }
 
 model Professor {
+  user_id String? @unique
+  user User? @relation("TeacherAccount", fields: [user_id], references: [id])
   id                       String               @id @default(cuid())
   tenant_id                String
   nome_completo            String
@@ -2741,6 +2749,8 @@ model Turma {
   matriculas   Matricula[]
   atividades   Atividade[]
   presencas    Presenca[]
+  aulas EducaAula[]
+  materiais EducaMaterial[]
 
   @@index([tenant_id])
   @@index([professor_id])
@@ -2763,6 +2773,7 @@ model Matricula {
   entregas   EntregaAtividade[]
   presencas  Presenca[]
   notas      NotaDesenvolvimento[]
+  educa_presencas EducaPresenca[]
 
   @@unique([turma_id, aluno_id])
   @@index([tenant_id])
@@ -2789,6 +2800,8 @@ model Atividade {
 }
 
 model EntregaAtividade {
+  feedback String?
+  anexos String[] @default([])
   id           String               @id @default(cuid())
   tenant_id    String
   atividade_id String
@@ -2837,4 +2850,55 @@ model NotaDesenvolvimento {
 
   @@index([tenant_id, matricula_id])
   @@map("notas_desenvolvimento")
+}
+
+model EducaAula {
+  id String @id @default(cuid())
+  tenant_id String
+  turma_id String
+  titulo String
+  inicio DateTime
+  fim DateTime
+  meet_url String
+  chamada_enviada_at DateTime?
+  enviada_por String?
+  versao Int @default(0)
+  turma Turma @relation(fields: [turma_id], references: [id])
+  presencas EducaPresenca[]
+  @@index([tenant_id, turma_id, inicio])
+  @@map("educa_aulas")
+}
+model EducaPresenca {
+  id String @id @default(cuid())
+  aula_id String
+  matricula_id String
+  status String
+  aula EducaAula @relation(fields: [aula_id], references: [id], onDelete: Cascade)
+  matricula Matricula @relation(fields: [matricula_id], references: [id])
+  @@unique([aula_id, matricula_id])
+  @@map("educa_presencas")
+}
+model EducaMaterial {
+  id String @id @default(cuid())
+  tenant_id String
+  turma_id String
+  titulo String
+  texto String?
+  anexo_id String?
+  created_at DateTime @default(now())
+  turma Turma @relation(fields: [turma_id], references: [id])
+  @@index([tenant_id, turma_id])
+  @@map("educa_materiais")
+}
+model EducaArquivo {
+  id String @id @default(cuid())
+  tenant_id String
+  turma_id String
+  user_id String
+  nome String
+  mime String
+  caminho String
+  created_at DateTime @default(now())
+  @@index([tenant_id, turma_id])
+  @@map("educa_arquivos")
 }
