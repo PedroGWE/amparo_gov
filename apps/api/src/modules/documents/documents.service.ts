@@ -1,10 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { OrganizationDocumentStatus, Prisma } from '@prisma/client'
 import { extname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import {
   DOCUMENT_MAX_SIZE_BYTES,
+  DOCUMENT_FORMAT_LABEL,
   isAllowedDocumentMime,
+  type CreateInstitutionalDocTypeInput,
   type InstitutionalDocStatus,
 } from '@cidadao/shared'
 import { PrismaService } from '../prisma/prisma.service'
@@ -18,7 +25,10 @@ export interface UploadedDocFile {
 }
 
 /** Regra de status: com arquivo e (validade nula ou futura) = VALIDO; validade passada = VENCIDO. */
-export function statusForValidity(validUntil: Date | null, now = new Date()): OrganizationDocumentStatus {
+export function statusForValidity(
+  validUntil: Date | null,
+  now = new Date(),
+): OrganizationDocumentStatus {
   if (validUntil && validUntil.getTime() < now.getTime()) return OrganizationDocumentStatus.VENCIDO
   return OrganizationDocumentStatus.VALIDO
 }
@@ -44,7 +54,9 @@ export class DocumentsService {
 
   /** Cria as categorias/tipos padrão para o tenant, se ainda não existirem (idempotente). */
   async ensureDefaults(tenantId: string) {
-    const count = await this.prisma.institutionalDocCategory.count({ where: { tenant_id: tenantId } })
+    const count = await this.prisma.institutionalDocCategory.count({
+      where: { tenant_id: tenantId },
+    })
     if (count > 0) return
     for (const cat of DEFAULT_DOCUMENT_CATEGORIES) {
       await this.prisma.institutionalDocCategory.create({
@@ -61,6 +73,42 @@ export class DocumentsService {
           },
         },
       })
+    }
+  }
+
+  async createType(tenantId: string, input: CreateInstitutionalDocTypeInput) {
+    await this.ensureDefaults(tenantId)
+    const existing = await this.prisma.institutionalDocType.findFirst({
+      where: {
+        category: { tenant_id: tenantId },
+        name: { equals: input.name, mode: 'insensitive' },
+      },
+      select: { id: true },
+    })
+    if (existing)
+      throw new ConflictException(
+        'Já existe um tipo de documento com esse nome. Selecione-o na lista.',
+      )
+
+    const category = await this.prisma.institutionalDocCategory.upsert({
+      where: { tenant_id_name: { tenant_id: tenantId, name: 'Outros documentos' } },
+      create: { tenant_id: tenantId, name: 'Outros documentos', order: 100 },
+      update: {},
+      select: { id: true, name: true, order: true },
+    })
+    try {
+      const row = await this.prisma.institutionalDocType.create({
+        data: { category_id: category.id, name: input.name, required: false },
+        select: { id: true, name: true, required: true, default_validity_days: true },
+      })
+      return { ...row, category, status: 'PENDENTE' as const, document: null }
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException(
+          'Já existe um tipo de documento com esse nome. Selecione-o na lista.',
+        )
+      }
+      throw error
     }
   }
 
@@ -153,7 +201,7 @@ export class DocumentsService {
     validUntil?: string,
   ) {
     if (!isAllowedDocumentMime(file.mimetype)) {
-      throw new BadRequestException('Formato não permitido. Envie PDF, JPG ou PNG.')
+      throw new BadRequestException(`Formato não permitido. Envie ${DOCUMENT_FORMAT_LABEL}.`)
     }
     if (file.buffer.length > DOCUMENT_MAX_SIZE_BYTES) {
       throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB.')

@@ -4,8 +4,27 @@ import { z } from 'zod'
 // Documentos Institucionais (repositório do tenant)
 // ============================================================
 
-export const DOCUMENT_ALLOWED_MIMES = ['application/pdf', 'image/jpeg', 'image/png'] as const
+export const DOCUMENT_ALLOWED_MIMES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const
+export const DOCUMENT_ACCEPTED_EXTENSIONS = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
+export const DOCUMENT_FORMAT_LABEL = 'PDF, JPG, PNG, DOC ou DOCX'
 export const DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
+
+export const createInstitutionalDocTypeSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .transform((name) => name.replace(/\s+/g, ' '))
+    .pipe(
+      z.string().min(1, 'Informe o nome do tipo de documento.').max(150, 'Use até 150 caracteres.'),
+    ),
+})
+export type CreateInstitutionalDocTypeInput = z.infer<typeof createInstitutionalDocTypeSchema>
 
 export const institutionalDocStatusSchema = z.enum(['PENDENTE', 'VALIDO', 'VENCIDO'])
 export type InstitutionalDocStatus = z.infer<typeof institutionalDocStatusSchema>

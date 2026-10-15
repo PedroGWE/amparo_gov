@@ -28,6 +28,34 @@ const pdf = (size = 100): UploadedDocFile => ({
 })
 
 describe('DocumentsService.upload', () => {
+  it.each([
+    ['contrato.doc', 'application/msword'],
+    ['contrato.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  ])('aceita Word e preserva formato no download: %s', async (filename, mimetype) => {
+    const { prisma, storage } = makeMocks()
+    const service = new DocumentsService(prisma as any, storage as any)
+    const doc = await service.upload('t1', 'u1', 'type-1', { ...pdf(), filename, mimetype })
+    expect(doc.file_name).toBe(filename)
+    expect(doc.mime_type).toBe(mimetype)
+    expect(storage.save).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(filename.endsWith('.docx') ? '\\.docx$' : '\\.doc$')),
+      expect.any(Buffer),
+    )
+  })
+
+  it('mantém limite de tamanho para Word', async () => {
+    const { prisma, storage } = makeMocks()
+    const service = new DocumentsService(prisma as any, storage as any)
+    await expect(
+      service.upload('t1', 'u1', 'type-1', {
+        ...pdf(DOCUMENT_MAX_SIZE_BYTES + 1),
+        filename: 'grande.doc',
+        mimetype: 'application/msword',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(storage.save).not.toHaveBeenCalled()
+  })
+
   it('rejeita mime não permitido', async () => {
     const { prisma, storage } = makeMocks()
     const service = new DocumentsService(prisma as any, storage as any)
@@ -85,7 +113,10 @@ describe('DocumentsService.upload', () => {
 
   it('substitui arquivo anterior no reenvio (upsert + delete do arquivo antigo)', async () => {
     const { prisma, storage } = makeMocks()
-    prisma.institutionalDocument.findUnique.mockResolvedValue({ id: 'doc-1', file_url: 't1/old.pdf' })
+    prisma.institutionalDocument.findUnique.mockResolvedValue({
+      id: 'doc-1',
+      file_url: 't1/old.pdf',
+    })
     const service = new DocumentsService(prisma as any, storage as any)
 
     await service.upload('t1', 'u1', 'type-1', pdf())
@@ -100,11 +131,16 @@ describe('DocumentsService.upload', () => {
 
   it('preserva o arquivo anterior e remove o novo quando o banco falha', async () => {
     const { prisma, storage } = makeMocks()
-    prisma.institutionalDocument.findUnique.mockResolvedValue({ id: 'doc-1', file_url: 't1/old.pdf' })
+    prisma.institutionalDocument.findUnique.mockResolvedValue({
+      id: 'doc-1',
+      file_url: 't1/old.pdf',
+    })
     prisma.institutionalDocument.upsert.mockRejectedValue(new Error('database unavailable'))
     const service = new DocumentsService(prisma as any, storage as any)
 
-    await expect(service.upload('t1', 'u1', 'type-1', pdf())).rejects.toThrow('database unavailable')
+    await expect(service.upload('t1', 'u1', 'type-1', pdf())).rejects.toThrow(
+      'database unavailable',
+    )
 
     expect(storage.delete).toHaveBeenCalledTimes(1)
     expect(storage.delete).not.toHaveBeenCalledWith('t1/old.pdf')

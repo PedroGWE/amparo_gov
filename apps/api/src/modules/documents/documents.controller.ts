@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -11,7 +12,11 @@ import {
 } from '@nestjs/common'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import '@fastify/multipart' // augmenta FastifyRequest com req.file()
-import { queryInstitutionalDocsSchema, uploadInstitutionalDocSchema } from '@cidadao/shared'
+import {
+  createInstitutionalDocTypeSchema,
+  queryInstitutionalDocsSchema,
+  uploadInstitutionalDocSchema,
+} from '@cidadao/shared'
 import { DocumentsService } from './documents.service'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import type { JwtPayload } from '../auth/types/jwt-payload'
@@ -30,6 +35,13 @@ export class DocumentsController {
     const parsed = queryInstitutionalDocsSchema.safeParse(query)
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten().fieldErrors)
     return this.documents.list(tenantId, parsed.data)
+  }
+
+  @Post('types')
+  createType(@CurrentUser('tenantId') tenantId: string, @Body() body: unknown) {
+    const parsed = createInstitutionalDocTypeSchema.safeParse(body)
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0].message)
+    return this.documents.createType(tenantId, parsed.data)
   }
 
   @Post(':documentTypeId/upload')

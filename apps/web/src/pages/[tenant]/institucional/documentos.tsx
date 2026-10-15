@@ -3,6 +3,13 @@ import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
 import {
+  DOCUMENT_ACCEPTED_EXTENSIONS,
+  DOCUMENT_FORMAT_LABEL,
+  DOCUMENT_MAX_SIZE_BYTES,
+  createInstitutionalDocTypeSchema,
+  isAllowedDocumentMime,
+} from '@cidadao/shared'
+import {
   CheckCircle2,
   Download,
   FileText,
@@ -17,8 +24,7 @@ import { Badge } from '@/components/ui/Badge'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { documentsService, type DocStatus, type DocumentTypeRow } from '@/services/documents'
 
-const ACCEPTED = '.pdf,.jpg,.jpeg,.png'
-const MAX_SIZE = 10 * 1024 * 1024
+const NEW_TYPE = '__new__'
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
@@ -53,6 +59,10 @@ export default function DocumentosPage() {
   const [statusFilter, setStatusFilter] = useState<DocStatus | ''>('')
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState('')
+  const [newTypeName, setNewTypeName] = useState('')
+  const [creatingType, setCreatingType] = useState(false)
+  const [typeError, setTypeError] = useState('')
+  const creatingTypeRef = useRef(false)
   const [file, setFile] = useState<File | null>(null)
   const [validUntil, setValidUntil] = useState('')
   const [showValidity, setShowValidity] = useState(false)
@@ -113,12 +123,14 @@ export default function DocumentosPage() {
       clearFile()
       setUploadError('Selecione um arquivo por documento.')
     } else if (
-      !/\.(pdf|jpe?g|png)$/i.test(nextFile.name) ||
-      (nextFile.type && !['application/pdf', 'image/jpeg', 'image/png'].includes(nextFile.type))
+      !DOCUMENT_ACCEPTED_EXTENSIONS.split(',').some((extension) =>
+        nextFile.name.toLowerCase().endsWith(extension),
+      ) ||
+      (nextFile.type && !isAllowedDocumentMime(nextFile.type))
     ) {
       clearFile()
-      setUploadError('Formato não permitido. Escolha um arquivo PDF, JPG ou PNG.')
-    } else if (nextFile.size > MAX_SIZE || nextFile.size === 0) {
+      setUploadError(`Formato não permitido. Escolha um arquivo ${DOCUMENT_FORMAT_LABEL}.`)
+    } else if (nextFile.size > DOCUMENT_MAX_SIZE_BYTES || nextFile.size === 0) {
       clearFile()
       setUploadError(
         nextFile.size === 0
@@ -132,10 +144,55 @@ export default function DocumentosPage() {
 
   function chooseDocument(id: string) {
     setSelectedId(id)
+    setTypeError('')
+    setNewTypeName('')
     setValidUntil('')
     setShowValidity(false)
     setUploadError('')
     setSuccess('')
+  }
+
+  async function createType() {
+    if (creatingTypeRef.current || sendingRef.current) return
+    const parsed = createInstitutionalDocTypeSchema.safeParse({ name: newTypeName })
+    if (!parsed.success) {
+      setTypeError(parsed.error.issues[0].message)
+      return
+    }
+    creatingTypeRef.current = true
+    setCreatingType(true)
+    setTypeError('')
+    try {
+      const { category, ...row } = await documentsService.createType(parsed.data)
+      await mutate(
+        (current) => {
+          const categories = current ?? []
+          const exists = categories.some((group) => group.id === category.id)
+          return exists
+            ? categories.map((group) =>
+                group.id === category.id
+                  ? {
+                      ...group,
+                      types: [...group.types.filter((type) => type.id !== row.id), row].sort(
+                        (a, b) => a.name.localeCompare(b.name, 'pt-BR'),
+                      ),
+                    }
+                  : group,
+              )
+            : [...categories, { ...category, types: [row] }].sort((a, b) => a.order - b.order)
+        },
+        { revalidate: false },
+      )
+      chooseDocument(row.id)
+      setSuccess(`Tipo “${row.name}” criado. Agora você pode anexar o arquivo.`)
+    } catch (error) {
+      setTypeError(
+        errorMessage(error, 'Não foi possível criar o tipo de documento. Tente novamente.'),
+      )
+    } finally {
+      creatingTypeRef.current = false
+      setCreatingType(false)
+    }
   }
 
   function attach(row: DocumentTypeRow) {
@@ -247,7 +304,10 @@ export default function DocumentosPage() {
               </div>
             </div>
             <form onSubmit={submit} aria-busy={sending}>
-              <fieldset disabled={sending} className="grid min-w-0 gap-5 md:grid-cols-2">
+              <fieldset
+                disabled={sending || creatingType}
+                className="grid min-w-0 gap-5 md:grid-cols-2"
+              >
                 <div className="min-w-0 space-y-4">
                   <div>
                     <label htmlFor="document-type" className="label">
@@ -261,6 +321,7 @@ export default function DocumentosPage() {
                       onChange={(event) => chooseDocument(event.target.value)}
                     >
                       <option value="">Selecione o documento</option>
+                      <option value={NEW_TYPE}>+ Criar novo tipo de documento</option>
                       {groups.map((group) => (
                         <optgroup key={group.id} label={group.name}>
                           {group.types.map((row) => (
@@ -272,6 +333,71 @@ export default function DocumentosPage() {
                         </optgroup>
                       ))}
                     </select>
+                    {selectedId !== NEW_TYPE && (
+                      <button
+                        type="button"
+                        className="mt-2 text-sm font-medium text-brand-600 hover:underline"
+                        onClick={() => chooseDocument(NEW_TYPE)}
+                      >
+                        + Criar novo tipo de documento
+                      </button>
+                    )}
+                    {selectedId === NEW_TYPE && (
+                      <div className="mt-3 space-y-3 rounded-lg border border-brand-100 bg-brand-50 p-3">
+                        <div>
+                          <label htmlFor="new-document-type" className="label">
+                            Nome do novo tipo
+                          </label>
+                          <input
+                            id="new-document-type"
+                            className="input"
+                            placeholder="Ex.: Estatuto social, contrato, declaração"
+                            maxLength={150}
+                            value={newTypeName}
+                            aria-invalid={!!typeError}
+                            aria-describedby={typeError ? 'document-type-error' : undefined}
+                            onChange={(event) => {
+                              setNewTypeName(event.target.value)
+                              setTypeError('')
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault()
+                                void createType()
+                              }
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          O tipo ficará salvo em “Outros documentos” para sua instituição.
+                        </p>
+                        {typeError && (
+                          <p id="document-type-error" role="alert" className="text-sm text-red-700">
+                            {typeError}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn-primary gap-2"
+                            disabled={!newTypeName.trim() || creatingType}
+                            onClick={() => void createType()}
+                          >
+                            {creatingType && (
+                              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            )}
+                            {creatingType ? 'Criando...' : 'Criar tipo'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-ghost"
+                            onClick={() => chooseDocument('')}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {selectedRow?.document && (
                     <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
@@ -345,7 +471,9 @@ export default function DocumentosPage() {
                       {file ? file.name : 'Arraste e solte seu arquivo aqui'}
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      {file ? formatSize(file.size) : 'PDF, JPG ou PNG · até 10 MB por arquivo'}
+                      {file
+                        ? formatSize(file.size)
+                        : `${DOCUMENT_FORMAT_LABEL} · até 10 MB por arquivo`}
                     </p>
                     <div className="mt-2 flex flex-wrap justify-center gap-1">
                       <button
@@ -369,7 +497,7 @@ export default function DocumentosPage() {
                     <input
                       ref={inputRef}
                       type="file"
-                      accept={ACCEPTED}
+                      accept={DOCUMENT_ACCEPTED_EXTENSIONS}
                       className="hidden"
                       aria-label="Selecionar arquivo para anexar"
                       onChange={(event) => pick(event.target.files)}
@@ -394,7 +522,7 @@ export default function DocumentosPage() {
                 <button
                   type="submit"
                   className="btn-primary gap-2"
-                  disabled={!file || !selectedRow || sending || !!busyId}
+                  disabled={!file || !selectedRow || sending || creatingType || !!busyId}
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -541,7 +669,7 @@ export default function DocumentosPage() {
                                   ? 'btn-ghost gap-2 text-brand-600'
                                   : 'btn-primary gap-2'
                               }
-                              disabled={sending || !!busyId}
+                              disabled={sending || creatingType || !!busyId}
                               onClick={() => attach(row)}
                               aria-label={(row.document ? 'Substituir ' : 'Anexar ') + row.name}
                             >
@@ -553,7 +681,7 @@ export default function DocumentosPage() {
                                 <button
                                   type="button"
                                   className="btn-ghost gap-2"
-                                  disabled={sending || !!busyId}
+                                  disabled={sending || creatingType || !!busyId}
                                   onClick={() => handleAction(row, 'download')}
                                   aria-label={'Baixar ' + row.name}
                                 >
@@ -563,7 +691,7 @@ export default function DocumentosPage() {
                                 <button
                                   type="button"
                                   className="btn-ghost px-3 text-red-600"
-                                  disabled={sending || !!busyId}
+                                  disabled={sending || creatingType || !!busyId}
                                   onClick={() => handleAction(row, 'delete')}
                                   aria-label={'Excluir ' + row.name}
                                   title="Excluir arquivo"
