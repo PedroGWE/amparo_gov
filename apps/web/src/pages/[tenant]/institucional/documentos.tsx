@@ -60,9 +60,7 @@ export default function DocumentosPage() {
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [newTypeName, setNewTypeName] = useState('')
-  const [creatingType, setCreatingType] = useState(false)
   const [typeError, setTypeError] = useState('')
-  const creatingTypeRef = useRef(false)
   const [file, setFile] = useState<File | null>(null)
   const [validUntil, setValidUntil] = useState('')
   const [showValidity, setShowValidity] = useState(false)
@@ -78,6 +76,8 @@ export default function DocumentosPage() {
 
   const rows = useMemo(() => groups?.flatMap((group) => group.types) ?? [], [groups])
   const selectedRow = rows.find((row) => row.id === selectedId)
+  const isOtherDocument = selectedId === NEW_TYPE
+  const hasDocumentName = isOtherDocument ? !!newTypeName.trim() : !!selectedRow
   const filteredGroups = (groups ?? [])
     .map((group) => ({
       ...group,
@@ -152,47 +152,30 @@ export default function DocumentosPage() {
     setSuccess('')
   }
 
-  async function createType() {
-    if (creatingTypeRef.current || sendingRef.current) return
-    const parsed = createInstitutionalDocTypeSchema.safeParse({ name: newTypeName })
-    if (!parsed.success) {
-      setTypeError(parsed.error.issues[0].message)
-      return
-    }
-    creatingTypeRef.current = true
-    setCreatingType(true)
-    setTypeError('')
-    try {
-      const { category, ...row } = await documentsService.createType(parsed.data)
-      await mutate(
-        (current) => {
-          const categories = current ?? []
-          const exists = categories.some((group) => group.id === category.id)
-          return exists
-            ? categories.map((group) =>
-                group.id === category.id
-                  ? {
-                      ...group,
-                      types: [...group.types.filter((type) => type.id !== row.id), row].sort(
-                        (a, b) => a.name.localeCompare(b.name, 'pt-BR'),
-                      ),
-                    }
-                  : group,
-              )
-            : [...categories, { ...category, types: [row] }].sort((a, b) => a.order - b.order)
-        },
-        { revalidate: false },
-      )
-      chooseDocument(row.id)
-      setSuccess(`Tipo “${row.name}” criado. Agora você pode anexar o arquivo.`)
-    } catch (error) {
-      setTypeError(
-        errorMessage(error, 'Não foi possível criar o tipo de documento. Tente novamente.'),
-      )
-    } finally {
-      creatingTypeRef.current = false
-      setCreatingType(false)
-    }
+  async function createType(name: string) {
+    const { category, ...row } = await documentsService.createType({ name })
+    await mutate(
+      (current) => {
+        const categories = current ?? []
+        const exists = categories.some((group) => group.id === category.id)
+        return exists
+          ? categories.map((group) =>
+              group.id === category.id
+                ? {
+                    ...group,
+                    types: [...group.types.filter((type) => type.id !== row.id), row].sort((a, b) =>
+                      a.name.localeCompare(b.name, 'pt-BR'),
+                    ),
+                  }
+                : group,
+            )
+          : [...categories, { ...category, types: [row] }].sort((a, b) => a.order - b.order)
+      },
+      { revalidate: false },
+    )
+    // Keep the created type selected if upload fails, so retry does not create it again.
+    setSelectedId(row.id)
+    return row
   }
 
   function attach(row: DocumentTypeRow) {
@@ -204,22 +187,28 @@ export default function DocumentosPage() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!selectedRow || !file || sendingRef.current) return
+    if (!hasDocumentName || !file || sendingRef.current || busyId) return
+    const parsedName = createInstitutionalDocTypeSchema.safeParse({ name: newTypeName })
+    if (isOtherDocument && !parsedName.success) {
+      setTypeError(parsedName.error.issues[0].message)
+      return
+    }
     sendingRef.current = true
     setSending(true)
     setUploadError('')
     setSuccess('')
     try {
-      await documentsService.upload(selectedRow.id, file, validUntil || undefined)
+      const row =
+        isOtherDocument && parsedName.success ? await createType(parsedName.data.name) : selectedRow
+      if (!row) return
+      await documentsService.upload(row.id, file, validUntil || undefined)
       setSuccess(
-        '“' +
-          selectedRow.name +
-          '” ' +
-          (selectedRow.document ? 'substituído' : 'anexado') +
-          ' com sucesso.',
+        '“' + row.name + '” ' + (row.document ? 'substituído' : 'anexado') + ' com sucesso.',
       )
       clearFile()
       setSelectedId('')
+      setNewTypeName('')
+      setTypeError('')
       setValidUntil('')
       setShowValidity(false)
       void mutate()
@@ -299,15 +288,12 @@ export default function DocumentosPage() {
                   Anexar documento
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Escolha o tipo de documento, selecione o arquivo e envie.
+                  Escolha um tipo da lista ou “Outro documento” para informar um nome e anexar.
                 </p>
               </div>
             </div>
             <form onSubmit={submit} aria-busy={sending}>
-              <fieldset
-                disabled={sending || creatingType}
-                className="grid min-w-0 gap-5 md:grid-cols-2"
-              >
+              <fieldset disabled={sending} className="grid min-w-0 gap-5 md:grid-cols-2">
                 <div className="min-w-0 space-y-4">
                   <div>
                     <label htmlFor="document-type" className="label">
@@ -321,7 +307,7 @@ export default function DocumentosPage() {
                       onChange={(event) => chooseDocument(event.target.value)}
                     >
                       <option value="">Selecione o documento</option>
-                      <option value={NEW_TYPE}>+ Criar novo tipo de documento</option>
+                      <option value={NEW_TYPE}>Outro documento (informar nome)</option>
                       {groups.map((group) => (
                         <optgroup key={group.id} label={group.name}>
                           {group.types.map((row) => (
@@ -336,23 +322,24 @@ export default function DocumentosPage() {
                     {selectedId !== NEW_TYPE && (
                       <button
                         type="button"
-                        className="mt-2 text-sm font-medium text-brand-600 hover:underline"
+                        className="btn-ghost mt-2 w-full border border-brand-200 text-brand-600"
                         onClick={() => chooseDocument(NEW_TYPE)}
                       >
-                        + Criar novo tipo de documento
+                        + Anexar documento fora da lista
                       </button>
                     )}
                     {selectedId === NEW_TYPE && (
                       <div className="mt-3 space-y-3 rounded-lg border border-brand-100 bg-brand-50 p-3">
                         <div>
                           <label htmlFor="new-document-type" className="label">
-                            Nome do novo tipo
+                            Nome do documento
                           </label>
                           <input
                             id="new-document-type"
                             className="input"
                             placeholder="Ex.: Estatuto social, contrato, declaração"
                             maxLength={150}
+                            required
                             value={newTypeName}
                             aria-invalid={!!typeError}
                             aria-describedby={typeError ? 'document-type-error' : undefined}
@@ -360,16 +347,11 @@ export default function DocumentosPage() {
                               setNewTypeName(event.target.value)
                               setTypeError('')
                             }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                void createType()
-                              }
-                            }}
                           />
                         </div>
                         <p className="text-xs text-gray-600">
-                          O tipo ficará salvo em “Outros documentos” para sua instituição.
+                          Dê um nome ao documento e selecione o arquivo. Ao enviar, ele ficará salvo
+                          em “Outros documentos”.
                         </p>
                         {typeError && (
                           <p id="document-type-error" role="alert" className="text-sm text-red-700">
@@ -379,21 +361,10 @@ export default function DocumentosPage() {
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
-                            className="btn-primary gap-2"
-                            disabled={!newTypeName.trim() || creatingType}
-                            onClick={() => void createType()}
-                          >
-                            {creatingType && (
-                              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                            )}
-                            {creatingType ? 'Criando...' : 'Criar tipo'}
-                          </button>
-                          <button
-                            type="button"
                             className="btn-ghost"
                             onClick={() => chooseDocument('')}
                           >
-                            Cancelar
+                            Escolher um tipo da lista
                           </button>
                         </div>
                       </div>
@@ -515,14 +486,16 @@ export default function DocumentosPage() {
               )}
               <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-gray-500">
-                  {file && selectedRow
+                  {file && hasDocumentName
                     ? 'Tudo pronto para enviar.'
-                    : 'Selecione o tipo e o arquivo para habilitar o envio.'}
+                    : isOtherDocument
+                      ? 'Informe o nome do documento e selecione o arquivo.'
+                      : 'Selecione o tipo e o arquivo para habilitar o envio.'}
                 </p>
                 <button
                   type="submit"
                   className="btn-primary gap-2"
-                  disabled={!file || !selectedRow || sending || creatingType || !!busyId}
+                  disabled={!file || !hasDocumentName || sending || !!busyId}
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -669,7 +642,7 @@ export default function DocumentosPage() {
                                   ? 'btn-ghost gap-2 text-brand-600'
                                   : 'btn-primary gap-2'
                               }
-                              disabled={sending || creatingType || !!busyId}
+                              disabled={sending || !!busyId}
                               onClick={() => attach(row)}
                               aria-label={(row.document ? 'Substituir ' : 'Anexar ') + row.name}
                             >
@@ -681,7 +654,7 @@ export default function DocumentosPage() {
                                 <button
                                   type="button"
                                   className="btn-ghost gap-2"
-                                  disabled={sending || creatingType || !!busyId}
+                                  disabled={sending || !!busyId}
                                   onClick={() => handleAction(row, 'download')}
                                   aria-label={'Baixar ' + row.name}
                                 >
@@ -691,7 +664,7 @@ export default function DocumentosPage() {
                                 <button
                                   type="button"
                                   className="btn-ghost px-3 text-red-600"
-                                  disabled={sending || creatingType || !!busyId}
+                                  disabled={sending || !!busyId}
                                   onClick={() => handleAction(row, 'delete')}
                                   aria-label={'Excluir ' + row.name}
                                   title="Excluir arquivo"
