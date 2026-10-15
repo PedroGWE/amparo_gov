@@ -1,10 +1,22 @@
 import api from '@/lib/api'
 
 export type ProjectStatus =
-  | 'RASCUNHO' | 'CAPTACAO' | 'APROVADO' | 'EM_EXECUCAO' | 'CONCLUIDO' | 'SUSPENSO' | 'CANCELADO'
+  | 'RASCUNHO'
+  | 'CAPTACAO'
+  | 'APROVADO'
+  | 'EM_EXECUCAO'
+  | 'CONCLUIDO'
+  | 'SUSPENSO'
+  | 'CANCELADO'
 
 export type ProjectType =
-  | 'CULTURAL' | 'ESPORTIVO' | 'EDUCACIONAL' | 'ASSISTENCIA_SOCIAL' | 'SAUDE' | 'AMBIENTAL' | 'OUTROS'
+  | 'CULTURAL'
+  | 'ESPORTIVO'
+  | 'EDUCACIONAL'
+  | 'ASSISTENCIA_SOCIAL'
+  | 'SAUDE'
+  | 'AMBIENTAL'
+  | 'OUTROS'
 
 export interface Project {
   id: string
@@ -30,11 +42,35 @@ export interface ProjectTask {
   title: string
   description?: string
   phase_id?: string
+  assigned_to?: string | null
   due_date?: string
   status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA' | 'BLOQUEADA'
   priority: 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE'
   phase?: { id: string; name: string }
   assignee?: { id: string; name: string }
+}
+
+export interface ProjectMember {
+  id: string
+  user_id: string
+  role: 'GESTOR' | 'COORDENADOR' | 'COLABORADOR' | 'VOLUNTARIO'
+  user: { id: string; name: string; email: string }
+}
+
+export interface ProjectDetails extends Omit<Project, '_count'> {
+  manager_id?: string | null
+  members: ProjectMember[]
+  phases: ProjectPhase[]
+  _count: { tasks: number; risks: number; documents: number; beneficiaries: number }
+}
+
+export interface ProjectTaskInput {
+  title: string
+  description?: string
+  phase_id?: string | null
+  assigned_to?: string | null
+  due_date?: string
+  priority?: ProjectTask['priority']
 }
 
 export interface ProjectPhase {
@@ -80,7 +116,13 @@ export interface ProjectClass {
   capacidade: number | null
   horario: unknown
   matriculas: { id: string; status: 'ATIVA' | 'EM_ESPERA'; aluno: { id: string; name: string } }[]
-  atividades: { id: string; titulo: string; descricao: string | null; prazo: string | null; status: string }[]
+  atividades: {
+    id: string
+    titulo: string
+    descricao: string | null
+    prazo: string | null
+    status: string
+  }[]
   attendance30d: { present: number; absent: number }
 }
 
@@ -120,7 +162,7 @@ export const projectsService = {
   list: (params?: Record<string, string | number>): Promise<ProjectsPage> =>
     api.get('/projects', { params }).then((r) => r.data),
 
-  get: (id: string) => api.get(`/projects/${id}`).then((r) => r.data),
+  get: (id: string): Promise<ProjectDetails> => api.get(`/projects/${id}`).then((r) => r.data),
 
   create: (dto: CreateProjectInput) => api.post('/projects', dto).then((r) => r.data),
 
@@ -129,41 +171,84 @@ export const projectsService = {
 
   remove: (id: string) => api.delete(`/projects/${id}`),
 
-  phases: (id: string) => api.get(`/projects/${id}/phases`).then((r) => r.data),
+  phases: (id: string): Promise<ProjectPhase[]> =>
+    api.get(`/projects/${id}/phases`).then((r) => r.data),
 
-  createPhase: (id: string, dto: { name: string; order: number; start_date?: string; end_date?: string }) =>
-    api.post(`/projects/${id}/phases`, dto).then((r) => r.data),
+  createPhase: (
+    id: string,
+    dto: { name: string; order: number; start_date?: string; end_date?: string },
+  ) => api.post(`/projects/${id}/phases`, dto).then((r) => r.data),
 
-  indicators: (id: string): Promise<ProjectIndicator[]> => api.get(`/projects/${id}/indicators`).then((r) => r.data),
+  indicators: (id: string): Promise<ProjectIndicator[]> =>
+    api.get(`/projects/${id}/indicators`).then((r) => r.data),
 
-  createIndicator: (id: string, dto: { name: string; description?: string; unit?: string; baseline?: number; target?: number; current_value?: number; frequency?: ProjectIndicator['frequency'] }) =>
-    api.post(`/projects/${id}/indicators`, dto).then((r) => r.data),
+  createIndicator: (
+    id: string,
+    dto: {
+      name: string
+      description?: string
+      unit?: string
+      baseline?: number
+      target?: number
+      current_value?: number
+      frequency?: ProjectIndicator['frequency']
+    },
+  ) => api.post(`/projects/${id}/indicators`, dto).then((r) => r.data),
 
   updateIndicator: (id: string, indicatorId: string, current_value: number) =>
     api.patch(`/projects/${id}/indicators/${indicatorId}`, { current_value }).then((r) => r.data),
 
-  tasks: (id: string, params?: Record<string, string>) =>
+  tasks: (id: string, params?: Record<string, string>): Promise<ProjectTask[]> =>
     api.get(`/projects/${id}/tasks`, { params }).then((r) => r.data),
 
-  createTask: (id: string, dto: { title: string; phase_id?: string; due_date?: string; priority?: ProjectTask['priority'] }) =>
+  createTask: (id: string, dto: ProjectTaskInput) =>
     api.post(`/projects/${id}/tasks`, dto).then((r) => r.data),
 
-  updateTask: (id: string, taskId: string, dto: { status?: ProjectTask['status'] }) =>
-    api.patch(`/projects/${id}/tasks/${taskId}`, dto).then((r) => r.data),
+  updateTask: (
+    id: string,
+    taskId: string,
+    dto: Partial<ProjectTaskInput> & { status?: ProjectTask['status'] },
+  ) => api.patch(`/projects/${id}/tasks/${taskId}`, dto).then((r) => r.data),
 
-  members: (id: string) => api.get(`/projects/${id}/members`).then((r) => r.data),
+  members: (id: string): Promise<ProjectMember[]> =>
+    api.get(`/projects/${id}/members`).then((r) => r.data),
 
-  management: (id: string): Promise<ProjectManagement> => api.get(`/projects/${id}/management`).then((r) => r.data),
-  searchStudents: (id: string, q: string): Promise<{ id: string; name: string; turma: string | null }[]> =>
+  addMember: (id: string, user_id: string, role: ProjectMember['role']) =>
+    api.post(`/projects/${id}/members`, { user_id, role }).then((r) => r.data),
+
+  removeMember: (id: string, userId: string) => api.delete(`/projects/${id}/members/${userId}`),
+
+  management: (id: string): Promise<ProjectManagement> =>
+    api.get(`/projects/${id}/management`).then((r) => r.data),
+  searchStudents: (
+    id: string,
+    q: string,
+  ): Promise<{ id: string; name: string; turma: string | null }[]> =>
     api.get(`/projects/${id}/students/search`, { params: { q } }).then((r) => r.data),
-  linkStudent: (id: string, beneficiary_id: string) => api.post(`/projects/${id}/students`, { beneficiary_id }).then((r) => r.data),
-  unlinkStudent: (id: string, studentId: string) => api.delete(`/projects/${id}/students/${studentId}`),
-  createClass: (id: string, dto: { nome: string; capacidade: number; horario?: string }) => api.post(`/projects/${id}/classes`, dto).then((r) => r.data),
-  enrollStudent: (id: string, classId: string, studentId: string) => api.post(`/projects/${id}/classes/${classId}/students/${studentId}`).then((r) => r.data),
+  linkStudent: (id: string, beneficiary_id: string) =>
+    api.post(`/projects/${id}/students`, { beneficiary_id }).then((r) => r.data),
+  unlinkStudent: (id: string, studentId: string) =>
+    api.delete(`/projects/${id}/students/${studentId}`),
+  createClass: (id: string, dto: { nome: string; capacidade: number; horario?: string }) =>
+    api.post(`/projects/${id}/classes`, dto).then((r) => r.data),
+  enrollStudent: (id: string, classId: string, studentId: string) =>
+    api.post(`/projects/${id}/classes/${classId}/students/${studentId}`).then((r) => r.data),
   attendance: (id: string, classId: string, date: string): Promise<AttendanceRow[]> =>
-    api.get(`/projects/${id}/classes/${classId}/attendance`, { params: { date } }).then((r) => r.data),
-  saveAttendance: (id: string, classId: string, data: string, presencas: { matricula_id: string; presente: boolean }[]) =>
-    api.post(`/projects/${id}/classes/${classId}/attendance`, { data, presencas }).then((r) => r.data),
-  createRoutine: (id: string, classId: string, dto: { titulo: string; descricao?: string; prazo?: string }) =>
-    api.post(`/projects/${id}/classes/${classId}/routine`, dto).then((r) => r.data),
+    api
+      .get(`/projects/${id}/classes/${classId}/attendance`, { params: { date } })
+      .then((r) => r.data),
+  saveAttendance: (
+    id: string,
+    classId: string,
+    data: string,
+    presencas: { matricula_id: string; presente: boolean }[],
+  ) =>
+    api
+      .post(`/projects/${id}/classes/${classId}/attendance`, { data, presencas })
+      .then((r) => r.data),
+  createRoutine: (
+    id: string,
+    classId: string,
+    dto: { titulo: string; descricao?: string; prazo?: string },
+  ) => api.post(`/projects/${id}/classes/${classId}/routine`, dto).then((r) => r.data),
 }
