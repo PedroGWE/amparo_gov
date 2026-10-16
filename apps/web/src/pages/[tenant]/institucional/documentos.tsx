@@ -58,7 +58,7 @@ export default function DocumentosPage() {
   } = useSWR(query.tenant ? ['/documents', query.tenant] : null, () => documentsService.list())
   const [statusFilter, setStatusFilter] = useState<DocStatus | ''>('')
   const [search, setSearch] = useState('')
-  const [selectedId, setSelectedId] = useState('')
+  const [selectedId, setSelectedId] = useState(NEW_TYPE)
   const [newTypeName, setNewTypeName] = useState('')
   const [typeError, setTypeError] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -206,7 +206,7 @@ export default function DocumentosPage() {
         '“' + row.name + '” ' + (row.document ? 'substituído' : 'anexado') + ' com sucesso.',
       )
       clearFile()
-      setSelectedId('')
+      setSelectedId(NEW_TYPE)
       setNewTypeName('')
       setTypeError('')
       setValidUntil('')
@@ -285,91 +285,109 @@ export default function DocumentosPage() {
               </div>
               <div>
                 <h2 id="upload-heading" className="font-semibold text-gray-900">
-                  Anexar documento
+                  Enviar documento
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Escolha um tipo da lista ou “Outro documento” para informar um nome e anexar.
+                  Envie um documento novo com o nome que desejar ou use um tipo já cadastrado.
                 </p>
               </div>
             </div>
             <form onSubmit={submit} aria-busy={sending}>
+              <div
+                className="mb-5 grid gap-3 sm:grid-cols-2"
+                role="group"
+                aria-label="Como deseja enviar o documento?"
+              >
+                <button
+                  type="button"
+                  aria-pressed={isOtherDocument}
+                  disabled={sending}
+                  onClick={() => chooseDocument(NEW_TYPE)}
+                  className={
+                    'rounded-xl border p-4 text-left transition-colors ' +
+                    (isOtherDocument
+                      ? 'border-brand-500 bg-brand-50 text-brand-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-brand-300')
+                  }
+                >
+                  <span className="block text-sm font-semibold">Enviar documento novo</span>
+                  <span className="mt-1 block text-xs">Informe o nome e escolha o arquivo.</span>
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={!isOtherDocument}
+                  disabled={sending}
+                  onClick={() => chooseDocument('')}
+                  className={
+                    'rounded-xl border p-4 text-left transition-colors ' +
+                    (!isOtherDocument
+                      ? 'border-brand-500 bg-brand-50 text-brand-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-brand-300')
+                  }
+                >
+                  <span className="block text-sm font-semibold">Usar tipo cadastrado</span>
+                  <span className="mt-1 block text-xs">Selecione um documento da lista.</span>
+                </button>
+              </div>
               <fieldset disabled={sending} className="grid min-w-0 gap-5 md:grid-cols-2">
                 <div className="min-w-0 space-y-4">
-                  <div>
-                    <label htmlFor="document-type" className="label">
-                      Tipo de documento
-                    </label>
-                    <select
-                      id="document-type"
-                      className="input"
-                      required
-                      value={selectedId}
-                      onChange={(event) => chooseDocument(event.target.value)}
-                    >
-                      <option value="">Selecione o documento</option>
-                      <option value={NEW_TYPE}>Outro documento (informar nome)</option>
-                      {groups.map((group) => (
-                        <optgroup key={group.id} label={group.name}>
-                          {group.types.map((row) => (
-                            <option key={row.id} value={row.id}>
-                              {row.name}
-                              {row.document ? ' (já anexado)' : ''}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                    {selectedId !== NEW_TYPE && (
-                      <button
-                        type="button"
-                        className="btn-ghost mt-2 w-full border border-brand-200 text-brand-600"
-                        onClick={() => chooseDocument(NEW_TYPE)}
-                      >
-                        + Anexar documento fora da lista
-                      </button>
-                    )}
-                    {selectedId === NEW_TYPE && (
-                      <div className="mt-3 space-y-3 rounded-lg border border-brand-100 bg-brand-50 p-3">
-                        <div>
-                          <label htmlFor="new-document-type" className="label">
-                            Nome do documento
-                          </label>
-                          <input
-                            id="new-document-type"
-                            className="input"
-                            placeholder="Ex.: Estatuto social, contrato, declaração"
-                            maxLength={150}
-                            required
-                            value={newTypeName}
-                            aria-invalid={!!typeError}
-                            aria-describedby={typeError ? 'document-type-error' : undefined}
-                            onChange={(event) => {
-                              setNewTypeName(event.target.value)
-                              setTypeError('')
-                            }}
-                          />
-                        </div>
-                        <p className="text-xs text-gray-600">
-                          Dê um nome ao documento e selecione o arquivo. Ao enviar, ele ficará salvo
-                          em “Outros documentos”.
-                        </p>
-                        {typeError && (
-                          <p id="document-type-error" role="alert" className="text-sm text-red-700">
-                            {typeError}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="btn-ghost"
-                            onClick={() => chooseDocument('')}
-                          >
-                            Escolher um tipo da lista
-                          </button>
-                        </div>
+                  {isOtherDocument ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label htmlFor="new-document-type" className="label">
+                          Nome do documento
+                        </label>
+                        <input
+                          id="new-document-type"
+                          className="input"
+                          placeholder="Ex.: Estatuto social, contrato, declaração"
+                          maxLength={150}
+                          required
+                          value={newTypeName}
+                          aria-invalid={!!typeError}
+                          aria-describedby={typeError ? 'document-type-error' : undefined}
+                          onChange={(event) => {
+                            setNewTypeName(event.target.value)
+                            setTypeError('')
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
+                      <p className="text-xs text-gray-600">
+                        O documento será salvo em “Outros documentos” e poderá ser encontrado
+                        abaixo.
+                      </p>
+                      {typeError && (
+                        <p id="document-type-error" role="alert" className="text-sm text-red-700">
+                          {typeError}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="document-type" className="label">
+                        Tipo de documento cadastrado
+                      </label>
+                      <select
+                        id="document-type"
+                        className="input"
+                        required
+                        value={selectedId}
+                        onChange={(event) => chooseDocument(event.target.value)}
+                      >
+                        <option value="">Selecione o documento</option>
+                        {groups.map((group) => (
+                          <optgroup key={group.id} label={group.name}>
+                            {group.types.map((row) => (
+                              <option key={row.id} value={row.id}>
+                                {row.name}
+                                {row.document ? ' (já anexado)' : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   {selectedRow?.document && (
                     <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
                       Ao enviar, o novo arquivo substituirá o anexo atual:{' '}
