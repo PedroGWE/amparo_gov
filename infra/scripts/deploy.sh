@@ -16,7 +16,9 @@ pnpm install --frozen-lockfile
 echo "=== 2. Gerando Prisma Client ==="
 pnpm --filter @cidadao/api db:generate
 
-echo "=== 3. Build da API ==="
+echo "=== 3. Build do pacote compartilhado e da API ==="
+# A API e o Web dependem dos arquivos compilados de @cidadao/shared.
+pnpm --filter @cidadao/shared build
 cd apps/api
 pnpm build
 cd "$REPO_DIR"
