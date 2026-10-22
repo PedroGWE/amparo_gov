@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import useSWR from 'swr'
 import axios from 'axios'
 import { ArrowLeft, ArrowRight, CheckCircle2, GraduationCap, HeartHandshake, School } from 'lucide-react'
-import api from '@/lib/api'
+import { publicApi } from '@/lib/api'
 
 type ApplicantRole = 'RESPONSAVEL' | 'PROFESSOR' | 'ALUNO'
 type ClassOption = { id: string; nome: string; capacidade: number; vagas: number; project: { name: string } | null }
@@ -34,7 +34,7 @@ export default function InscricaoPage() {
   const router = useRouter()
   const slug = typeof router.query.tenant === 'string' ? router.query.tenant : ''
   const { data, error: loadError } = useSWR(slug ? `/enrollment/${slug}/classes` : null,
-    () => api.get(`/enrollment/${slug}/classes`).then((response) => response.data as { organization: string; classes: ClassOption[] }),
+    () => publicApi.get(`/enrollment/${slug}/classes`).then((response) => response.data as { organization: string; classes: ClassOption[] }),
   )
   const [form, setForm] = useState<Form>(initialForm)
   const [step, setStep] = useState(0)
@@ -71,7 +71,7 @@ export default function InscricaoPage() {
     setSending(true)
     setError('')
     try {
-      const { data: response } = await api.post(`/enrollment/${slug}/apply`, {
+      const { data: response } = await publicApi.post(`/enrollment/${slug}/apply`, {
         ...form,
         aluno_cpf: form.aluno_cpf.replace(/\D/g, '') || undefined,
         aluno_telefone: form.aluno_telefone.trim() || undefined,

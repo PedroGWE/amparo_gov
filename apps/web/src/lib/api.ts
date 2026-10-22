@@ -4,6 +4,8 @@ import Cookies from 'js-cookie'
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
 
 const api = axios.create({ baseURL: BASE_URL })
+// Public forms must work even when this browser has an expired staff session.
+export const publicApi = axios.create({ baseURL: BASE_URL })
 
 let _accessToken: string | null = null
 

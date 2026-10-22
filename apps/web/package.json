@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@cidadao/shared": "workspace:*",

@@ -50,6 +50,9 @@ jobs:
       - name: Run tests
         run: pnpm --filter @cidadao/api exec jest --runInBand
 
+      - name: Test enrollment display and public access
+        run: pnpm --filter @cidadao/web test
+
       - name: Build
         run: pnpm build
 

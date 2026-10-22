@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
     educaUrl.pathname = '/educa'
     return NextResponse.redirect(educaUrl)
   }
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname === '/'
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname === '/' || /^\/[^/]+\/inscricao\/?$/.test(pathname)
 
   if (!isPublic && !request.cookies.get('refresh_token')) {
     // Usa nextUrl para construir o redirect respeitando o protocolo real (HTTPS atrás de proxy)

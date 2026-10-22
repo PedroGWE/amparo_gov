@@ -644,10 +644,10 @@ export default function BeneficiariosPage() {
   if (search) params.search = search
   if (statusFilter) params.status = statusFilter
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, isValidating, error: loadError, mutate: refreshBeneficiarios } = useSWR(
     ['/beneficiarios', params],
     () => beneficiariosService.list(params),
-    { keepPreviousData: true },
+    { keepPreviousData: true, refreshInterval: 15000 },
   )
 
   const { data: detail, mutate: mutateDetail } = useSWR(
@@ -715,6 +715,9 @@ export default function BeneficiariosPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => refreshBeneficiarios()} disabled={isValidating} className="btn-ghost disabled:opacity-40">
+              {isValidating ? 'Atualizando...' : 'Atualizar cadastros'}
+            </button>
             {typeof router.query.tenant === 'string' && <Link href={`/${router.query.tenant}/matriculas`} className="btn-ghost">Turmas e vagas</Link>}
             <button
               onClick={() => { setEditItem(null); setShowForm(true) }}
@@ -727,6 +730,7 @@ export default function BeneficiariosPage() {
         </div>
         {editError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
         {removeMessage && <div role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{removeMessage}</div>}
+        {loadError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Não foi possível atualizar os cadastros. <button type="button" onClick={() => refreshBeneficiarios()} className="font-medium underline">Tentar novamente</button></div>}
 
         {/* Filters */}
         <div className="flex gap-3 flex-wrap">
@@ -755,7 +759,7 @@ export default function BeneficiariosPage() {
         <div>
           {isLoading ? (
             <PageSpinner />
-          ) : !data?.data.length ? (
+          ) : !data && loadError ? null : !data?.data.length ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="h-12 w-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-brand-600" />
