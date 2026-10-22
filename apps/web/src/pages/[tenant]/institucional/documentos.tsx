@@ -6,6 +6,7 @@ import {
   DOCUMENT_ACCEPTED_EXTENSIONS,
   DOCUMENT_FORMAT_LABEL,
   DOCUMENT_MAX_SIZE_BYTES,
+  DOCUMENT_MAX_SIZE_MB,
   createInstitutionalDocTypeSchema,
   isAllowedDocumentMime,
 } from '@cidadao/shared'
@@ -44,7 +45,7 @@ function normalize(value: string) {
 
 function errorMessage(error: unknown, fallback: string) {
   if ((error as { response?: { status?: number } })?.response?.status === 413)
-    return 'O envio foi recusado por tamanho. Escolha um arquivo de até 10 MB e tente novamente.'
+    return `O envio foi recusado por tamanho. Escolha um arquivo de até ${DOCUMENT_MAX_SIZE_MB} MB e tente novamente.`
   const message = (error as { response?: { data?: { message?: unknown } } })?.response?.data
     ?.message
   return typeof message === 'string' ? message : fallback
@@ -137,7 +138,7 @@ export default function DocumentosPage() {
       setUploadError(
         nextFile.size === 0
           ? 'O arquivo está vazio. Escolha outro arquivo.'
-          : 'O arquivo deve ter no máximo 10 MB.',
+          : `O arquivo deve ter no máximo ${DOCUMENT_MAX_SIZE_MB} MB.`,
       )
     } else {
       setFile(nextFile)
@@ -464,7 +465,7 @@ export default function DocumentosPage() {
                     <p className="mt-1 text-xs text-gray-500">
                       {file
                         ? formatSize(file.size)
-                        : `${DOCUMENT_FORMAT_LABEL} · até 10 MB por arquivo`}
+                        : `${DOCUMENT_FORMAT_LABEL} · até ${DOCUMENT_MAX_SIZE_MB} MB por arquivo`}
                     </p>
                     <div className="mt-2 flex flex-wrap justify-center gap-1">
                       <button

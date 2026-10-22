@@ -9,6 +9,7 @@ import { extname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import {
   DOCUMENT_MAX_SIZE_BYTES,
+  DOCUMENT_MAX_SIZE_MB,
   DOCUMENT_FORMAT_LABEL,
   isAllowedDocumentMime,
   type CreateInstitutionalDocTypeInput,
@@ -204,7 +205,7 @@ export class DocumentsService {
       throw new BadRequestException(`Formato não permitido. Envie ${DOCUMENT_FORMAT_LABEL}.`)
     }
     if (file.buffer.length > DOCUMENT_MAX_SIZE_BYTES) {
-      throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB.')
+      throw new BadRequestException(`Arquivo excede o tamanho máximo de ${DOCUMENT_MAX_SIZE_MB} MB.`)
     }
 
     // tipo precisa pertencer a uma categoria deste tenant (isolamento multi-tenant)

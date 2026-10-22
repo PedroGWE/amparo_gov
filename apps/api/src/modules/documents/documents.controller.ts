@@ -13,6 +13,7 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import '@fastify/multipart' // augmenta FastifyRequest com req.file()
 import {
+  DOCUMENT_MAX_SIZE_MB,
   createInstitutionalDocTypeSchema,
   queryInstitutionalDocsSchema,
   uploadInstitutionalDocSchema,
@@ -54,7 +55,7 @@ export class DocumentsController {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado')
 
     const buffer = await file.toBuffer().catch(() => {
-      throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB.')
+      throw new BadRequestException(`Arquivo excede o tamanho máximo de ${DOCUMENT_MAX_SIZE_MB} MB.`)
     })
 
     const fields: Record<string, string> = {}

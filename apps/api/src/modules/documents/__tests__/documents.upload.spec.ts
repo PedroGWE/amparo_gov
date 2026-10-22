@@ -66,13 +66,25 @@ describe('DocumentsService.upload', () => {
     expect(storage.save).not.toHaveBeenCalled()
   })
 
-  it('rejeita arquivo acima de 10MB', async () => {
+  it('aceita um PDF no limite de 20 MB', async () => {
+    const { prisma, storage } = makeMocks()
+    const service = new DocumentsService(prisma as any, storage as any)
+    const file = pdf(20 * 1024 * 1024)
+
+    const doc = await service.upload('t1', 'u1', 'type-1', file)
+
+    expect(doc.size_bytes).toBe(20 * 1024 * 1024)
+    expect(storage.save).toHaveBeenCalledTimes(1)
+    expect(storage.save.mock.calls[0][1]).toBe(file.buffer)
+  })
+
+  it('rejeita arquivo um byte acima de 20 MB', async () => {
     const { prisma, storage } = makeMocks()
     const service = new DocumentsService(prisma as any, storage as any)
 
     await expect(
-      service.upload('t1', 'u1', 'type-1', pdf(DOCUMENT_MAX_SIZE_BYTES + 1)),
-    ).rejects.toBeInstanceOf(BadRequestException)
+      service.upload('t1', 'u1', 'type-1', pdf(20 * 1024 * 1024 + 1)),
+    ).rejects.toThrow('Arquivo excede o tamanho máximo de 20 MB.')
     expect(storage.save).not.toHaveBeenCalled()
   })
 

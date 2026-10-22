@@ -13,7 +13,8 @@ export const DOCUMENT_ALLOWED_MIMES = [
 ] as const
 export const DOCUMENT_ACCEPTED_EXTENSIONS = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
 export const DOCUMENT_FORMAT_LABEL = 'PDF, JPG, PNG, DOC ou DOCX'
-export const DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
+export const DOCUMENT_MAX_SIZE_MB = 20
+export const DOCUMENT_MAX_SIZE_BYTES = DOCUMENT_MAX_SIZE_MB * 1024 * 1024
 
 export const createInstitutionalDocTypeSchema = z.object({
   name: z
