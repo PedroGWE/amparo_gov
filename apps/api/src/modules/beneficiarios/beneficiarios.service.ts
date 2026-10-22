@@ -86,6 +86,11 @@ export class BeneficiariosService {
       include: {
         project: { select: { id: true, name: true } },
         responsaveis: { orderBy: { created_at: 'asc' } },
+        documents: {
+          where: { tenant_id: tenantId, deleted_at: null },
+          select: { id: true, name: true, mime_type: true, created_at: true },
+          orderBy: { created_at: 'desc' },
+        },
         vinculos_projetos: {
           include: { project: { select: { id: true, name: true } } },
           orderBy: { data_ingresso: 'desc' },
@@ -94,6 +99,18 @@ export class BeneficiariosService {
     })
     if (!b) throw new NotFoundException('Beneficiário não encontrado')
     return b
+  }
+
+  async getDocument(tenantId: string, beneficiaryId: string, documentId: string) {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId, tenant_id: tenantId, beneficiary_id: beneficiaryId, deleted_at: null,
+        beneficiary: { tenant_id: tenantId, deleted_at: null },
+      },
+      select: { file_url: true, name: true, mime_type: true },
+    })
+    if (!document?.file_url) throw new NotFoundException('Anexo não encontrado')
+    return document
   }
 
   async create(tenantId: string, userId: string, dto: CreateBeneficiarioDto) {

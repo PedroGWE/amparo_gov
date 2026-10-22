@@ -9,7 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common'
+import type { FastifyReply } from 'fastify'
+import { StorageService } from '../documents/storage/storage.service'
 import { BeneficiariosService } from './beneficiarios.service'
 import { CreateBeneficiarioDto } from './dto/create-beneficiario.dto'
 import { UpdateBeneficiarioDto } from './dto/update-beneficiario.dto'
@@ -22,7 +25,7 @@ import type { JwtPayload } from '../auth/types/jwt-payload'
 
 @Controller('beneficiarios')
 export class BeneficiariosController {
-  constructor(private beneficiarios: BeneficiariosService) {}
+  constructor(private beneficiarios: BeneficiariosService, private storage: StorageService) {}
 
   // ── CRUD principal ────────────────────────────────────────────
 
@@ -40,6 +43,21 @@ export class BeneficiariosController {
   @Get(':id')
   findOne(@CurrentUser('tenantId') tid: string, @Param('id') id: string) {
     return this.beneficiarios.findOne(tid, id)
+  }
+
+  @Get(':id/documents/:documentId/download')
+  async downloadDocument(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id') id: string,
+    @Param('documentId') documentId: string,
+    @Res() reply: FastifyReply,
+  ) {
+    const document = await this.beneficiarios.getDocument(tenantId, id, documentId)
+    reply.header('Content-Type', document.mime_type || 'application/pdf')
+      .header('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(document.name)}`)
+      .header('Cache-Control', 'private, no-store')
+      .header('X-Content-Type-Options', 'nosniff')
+    return reply.send(this.storage.readStream(document.file_url!))
   }
 
   @Patch(':id')

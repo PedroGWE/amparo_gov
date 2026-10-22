@@ -394,6 +394,26 @@ function DetailDrawer({
   const [tab, setTab] = useState<'resumo' | 'responsaveis' | 'vinculos'>('resumo')
   const [showAddResp, setShowAddResp] = useState(false)
   const [showAddVinculo, setShowAddVinculo] = useState(false)
+  const [documentError, setDocumentError] = useState('')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  async function downloadDocument(document: BeneficiarioDetail['documents'][number]) {
+    setDocumentError('')
+    setDownloadingId(document.id)
+    try {
+      const blob = await beneficiariosService.downloadDocument(beneficiario.id, document.id)
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = document.name
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setDocumentError('Não foi possível baixar o anexo. Tente novamente.')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const respForm = useForm<CreateResponsavelInput>({ resolver: zodResolver(createResponsavelSchema) })
   const vinculoForm = useForm<CreateVinculoInput>({ resolver: zodResolver(createVinculoSchema) })
@@ -503,6 +523,12 @@ function DetailDrawer({
                 <p className="flex items-center gap-2 text-sm text-gray-700">{beneficiario.termo_consentimento ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />} Termo de consentimento {beneficiario.termo_consentimento ? `assinado em ${formatDate(beneficiario.data_consentimento)}` : 'pendente'}</p>
                 <p className="flex items-center gap-2 text-sm text-gray-700">{beneficiario.autorizacao_uso_imagem ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />} Uso de imagem {beneficiario.autorizacao_uso_imagem ? 'autorizado' : 'não autorizado'}</p>
               </div>
+            </section>
+            <section className="rounded-xl border border-gray-200 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900">Documentos do aluno ({beneficiario.documents?.length ?? 0})</h3>
+              {documentError && <p role="alert" className="mb-2 text-sm text-red-700">{documentError}</p>}
+              {!beneficiario.documents?.length && <p className="text-sm text-gray-500">Nenhum documento anexado.</p>}
+              <div className="space-y-2">{beneficiario.documents?.map((document) => <div key={document.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 p-3"><div className="min-w-0"><p className="break-words text-sm font-medium text-gray-900">{document.name}</p><p className="text-xs text-gray-500">Anexado em {formatDate(document.created_at)}</p></div><button type="button" onClick={() => downloadDocument(document)} disabled={downloadingId !== null} className="shrink-0 text-sm font-medium text-brand-700 disabled:opacity-40">{downloadingId === document.id ? 'Baixando...' : 'Baixar PDF'}</button></div>)}</div>
             </section>
           </div>
         )}

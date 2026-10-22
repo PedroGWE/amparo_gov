@@ -45,6 +45,7 @@ export interface BeneficiarioDetail extends Omit<Beneficiario, '_count'> {
   documento_consentimento_url: string | null
   responsaveis: Responsavel[]
   vinculos_projetos: VinculoProjeto[]
+  documents: { id: string; name: string; mime_type: string | null; created_at: string }[]
 }
 
 export interface Responsavel {
@@ -78,6 +79,8 @@ export interface BeneficiariosPage {
 }
 
 export const beneficiariosService = {
+  downloadDocument: (id: string, documentId: string) =>
+    api.get(`/beneficiarios/${id}/documents/${documentId}/download`, { responseType: 'blob' }).then((r) => r.data as Blob),
   list: (params?: Record<string, string | number>): Promise<BeneficiariosPage> =>
     api.get('/beneficiarios', { params }).then((r) => r.data),
 
