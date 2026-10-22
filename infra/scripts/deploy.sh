@@ -88,6 +88,6 @@ for attempt in {1..18}; do
 done
 
 echo "=== 10. Atualizando rota HTTPS do Educa ==="
-docker stack deploy --resolve-image never -c infra/docker/docker-stack.production.yml cidadao-futuro
+bash infra/scripts/deploy-proxy.sh
 
 echo "=== Deploy concluido! ==="

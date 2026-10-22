@@ -23,7 +23,8 @@ services:
 
 configs:
   cidadao_nginx_conf:
-    external: true
+    name: cidadao_nginx_${CIDADAO_NGINX_CONFIG_HASH}
+    file: ./nginx.production.conf
 
 networks:
   Vidrofy:

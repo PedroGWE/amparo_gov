@@ -43,6 +43,8 @@ function normalize(value: string) {
 }
 
 function errorMessage(error: unknown, fallback: string) {
+  if ((error as { response?: { status?: number } })?.response?.status === 413)
+    return 'O envio foi recusado por tamanho. Escolha um arquivo de até 10 MB e tente novamente.'
   const message = (error as { response?: { data?: { message?: unknown } } })?.response?.data
     ?.message
   return typeof message === 'string' ? message : fallback
