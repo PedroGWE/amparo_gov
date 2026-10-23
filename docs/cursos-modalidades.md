@@ -10,6 +10,10 @@ Em **Criar turmas**, informe o nome, a quantidade de turmas e as vagas por turma
 
 O link `/{organizacao}/inscricao?curso={id}` oferece somente as turmas daquele curso. O parâmetro adicional `turma={id}` abre a inscrição de uma turma específica. Os links continuam recebendo inscrições quando as vagas se esgotam: os alunos entram na reserva da turma em ordem de chegada. Encerrar ou excluir uma matrícula ativa, ou ampliar a capacidade, promove os primeiros da reserva automaticamente. A operação usa bloqueio transacional da turma para impedir excesso de vagas em inscrições simultâneas. Diminuir a capacidade preserva os alunos já matriculados.
 
+Na aba **Convites**, copie o link geral ou os convites com `perfil=aluno`, `perfil=responsavel` e `perfil=professor`. O perfil seleciona quem preenche a inscrição do aluno e pode ser alterado no formulário. Também há links diretos para cada turma e compartilhamento por WhatsApp. Todos abrem sem login.
+
+Cada convite usa imagem e cores da atividade, identificadas pelo nome ou escolhidas em **Imagem e cores do convite**. Clique em **Salvar identidade** para publicar a escolha. A página fornece título, descrição e imagem de compartilhamento no HTML inicial, inclusive para prévias de mensagens. As capas são ilustrativas. A migração `20261023120000_course_invitation_visual` acrescenta somente o campo opcional de identidade visual, preservando matrículas e capacidades existentes.
+
 Um curso pode ficar inativo ou ter suas inscrições encerradas pela edição. O servidor também rejeita envios diretos para cursos indisponíveis e turmas incompatíveis com o curso informado. Os dados e os vínculos administrativos são sempre limitados à organização autenticada.
 
 Na aba **Matrículas**, a edição da turma permite vincular uma turma existente a um curso ou modalidade. As turmas sem modalidade identificada permanecem disponíveis nessa aba. Alunos já cadastrados podem se inscrever em outro curso informando CPF, nome e nascimento correspondentes, sem criar outro cadastro pessoal.

@@ -15,7 +15,15 @@ function load(relative, mocks = {}) {
   const module = { exports: {} }
   vm.runInNewContext(code, {
     module, exports: module.exports, process, console,
-    require: (name) => Object.hasOwn(mocks, name) ? mocks[name] : name.startsWith('@/') ? load(`src/${name.slice(2)}.tsx`, mocks) : require(name),
+    require: (name) => {
+      if (Object.hasOwn(mocks, name)) return mocks[name]
+      if (name.startsWith('@/') || name.startsWith('.')) {
+        const base = name.startsWith('@/') ? path.resolve(__dirname, '..', 'src', name.slice(2)) : path.resolve(path.dirname(filename), name)
+        const target = ['.tsx', '.ts', '.js'].map(ext => base + ext).find(file => fs.existsSync(file))
+        return load(target, mocks)
+      }
+      return require(name)
+    },
   }, { filename })
   return module.exports
 }
@@ -107,7 +115,7 @@ test('public requests ignore staff tokens and expired session cookies', async ()
 test('public registration links are accessible while management pages require a session', () => {
   const { NextRequest } = require('next/server')
   const { middleware } = load('src/middleware.ts')
-  for (const route of ['/organizacao/inscricao', '/organizacao/inscricao/']) {
+  for (const route of ['/organizacao/inscricao', '/organizacao/inscricao/', '/courses/jiu-jitsu.png', '/fonts/Manrope-variable.ttf']) {
     assert.equal(middleware(new NextRequest(`https://app.example.org${route}`)).status, 200)
   }
   for (const route of ['/organizacao/matriculas', '/organizacao/beneficiarios', '/organizacao/inscricao/privado']) {

@@ -107,4 +107,25 @@ describe('CoursesService links and classes', () => {
     expect(await validate(plainToInstance(SaveCourseDto, { nome: 'Inglês', tipo: 'CURSO', project_ids: [] }))).toHaveLength(0)
     expect((await validate(plainToInstance(SaveCourseDto, { nome: 'Inglês', tipo: 'CURSO', project_ids: ['same', 'same'] }))).length).toBeGreaterThan(0)
   })
+
+  it('saves a selected invitation visual without replacing resource links or enrollment settings', async () => {
+    const { tx, service } = setup()
+    await service.save('tenant-1', { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: 'JUDO' }, 'course-1')
+    expect(tx.curso.findFirst).toHaveBeenCalledWith({ where: { id: 'course-1', tenant_id: 'tenant-1' } })
+    expect(tx.curso.update).toHaveBeenCalledWith({ where: { id: 'course-1' }, data: { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: 'JUDO' } })
+  })
+
+  it('restores automatic selection and rejects unknown visual values', async () => {
+    const { tx, service } = setup()
+    await service.save('tenant-1', { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: 'AUTO' }, 'course-1')
+    expect(tx.curso.update).toHaveBeenCalledWith(expect.objectContaining({ data: { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: null } }))
+    expect((await validate(plainToInstance(SaveCourseDto, { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: '../../private' }))).some(error => error.property === 'tema_visual')).toBe(true)
+  })
+
+  it('does not change the invitation visual of another organization', async () => {
+    const { tx, service } = setup()
+    tx.curso.findFirst.mockResolvedValue(null)
+    await expect(service.save('tenant-1', { nome: 'Judô', tipo: 'MODALIDADE', tema_visual: 'JUDO' }, 'foreign')).rejects.toThrow('não encontrado')
+    expect(tx.curso.update).not.toHaveBeenCalled()
+  })
 })

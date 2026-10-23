@@ -29,6 +29,14 @@ describe('EnrollmentService course registration', () => {
     expect(prisma.turma.findMany).not.toHaveBeenCalled()
   })
 
+  it('provides only the public course identity for the invitation', async () => {
+    const { prisma, service } = setup()
+    const course = { id: 'course-1', nome: 'Judô', tipo: 'MODALIDADE', descricao: 'Aulas de judô', tema_visual: 'JUDO' }
+    prisma.curso.findFirst.mockResolvedValue(course)
+    expect((await service.publicClasses('osc', 'course-1')).course).toEqual(course)
+    expect(prisma.curso.findFirst).toHaveBeenCalledWith({ where: { id: 'course-1', tenant_id: 'tenant-1', ativo: true, inscricoes_abertas: true }, select: { id: true, nome: true, tipo: true, descricao: true, tema_visual: true } })
+  })
+
   it('rejects submitting a class from a different course before creating a student', async () => {
     const { tx, service } = setup()
     await expect(service.apply('osc', { ...dto, curso_id: 'other-course' })).rejects.toThrow('não pertence')

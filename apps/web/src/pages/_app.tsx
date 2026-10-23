@@ -1,5 +1,6 @@
 import '@/styles/globals.css'
 import '@/styles/educa.css'
+import '@/styles/course-invitation.css'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useEffect } from 'react'

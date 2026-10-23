@@ -2755,6 +2755,7 @@ model Curso {
   descricao         String?
   ativo             Boolean @default(true)
   inscricoes_abertas Boolean @default(true)
+  tema_visual       String?
   legacy_project_id String? @unique
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt

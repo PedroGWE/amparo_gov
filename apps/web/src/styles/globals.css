@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @font-face { font-family: 'Inter'; src: url('/fonts/Inter-Variable.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: 'Manrope'; src: url('/fonts/Manrope-Variable.ttf') format('truetype'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Manrope'; src: url('/fonts/Manrope-variable.ttf') format('truetype'); font-weight: 200 800; font-display: swap; }
 
 @layer base {
   html {

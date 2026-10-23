@@ -23,6 +23,7 @@ export function middleware(request: NextRequest) {
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname === '/' ||
     pathname.startsWith('/brand/') ||
+    pathname.startsWith('/courses/') ||
     pathname.startsWith('/fonts/') ||
     pathname.startsWith('/amparo/') ||
     pathname === '/logo.png' ||

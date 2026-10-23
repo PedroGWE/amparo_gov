@@ -15,7 +15,7 @@ function render(relative, query, states, props = {}) {
     swr: { __esModule: true, default: useSWR },
     'next/router': { useRouter: () => ({ query: { tenant: 'osc', ...query } }) },
     'next/link': { __esModule: true, default: ({ children, shallow, scroll, ...props }) => React.createElement('a', props, children) },
-    'next/image': { __esModule: true, default: ({ priority, ...props }) => React.createElement('img', props) },
+    'next/image': { __esModule: true, default: ({ priority, fill, ...props }) => React.createElement('img', props) },
     'next/head': { __esModule: true, default: () => null },
     '@/components/layout/DashboardLayout': { __esModule: true, default: ({ children }) => children },
     '@/components/ui/Modal': { Modal: () => null },
@@ -24,7 +24,15 @@ function render(relative, query, states, props = {}) {
   function load(filename) {
     const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
     const module = { exports: {} }
-    vm.runInNewContext(compiled, { module, exports: module.exports, process, console, require: name => Object.hasOwn(mocks, name) ? mocks[name] : name.startsWith('@/') ? load(path.resolve(__dirname, '..', 'src', `${name.slice(2)}.tsx`)) : require(name) }, { filename })
+    vm.runInNewContext(compiled, { module, exports: module.exports, process, console, require: name => {
+      if (Object.hasOwn(mocks, name)) return mocks[name]
+      if (name.startsWith('@/') || name.startsWith('.')) {
+        const base = name.startsWith('@/') ? path.resolve(__dirname, '..', 'src', name.slice(2)) : path.resolve(path.dirname(filename), name)
+        const target = ['.tsx', '.ts', '.js'].map(ext => base + ext).find(file => fs.existsSync(file))
+        return load(target)
+      }
+      return require(name)
+    } }, { filename })
     return module.exports
   }
   return { html: renderToStaticMarkup(React.createElement(load(filename).default, props)), calls, exports: load(filename) }
@@ -66,6 +74,34 @@ test('public form requests only the course specified in its link', () => {
 test('public form does not silently fall back when the course is unavailable', () => {
   const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'closed' }, { '/enrollment/osc/classes?curso=closed': { error: new Error('not found') } })
   assert.match(html, /inscrições encerradas/)
+})
+
+test('each invitation uses the activity image and a saved visual can override automatic selection', () => {
+  for (const [name, image, preset] of [['Jiu-jítsu','jiu-jitsu',null],['Karatê','karate',null],['Judô','judo',null],['Oficina especial','pilates','PILATES']]) {
+    const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'activity' }, { '/enrollment/osc/classes?curso=activity': { data: { organization: 'OSC', course: { id: 'activity', nome: name, tema_visual: preset }, classes: [] } } })
+    assert.ok(html.includes(`src="/courses/${image}.png"`))
+    assert.ok(html.includes(`Matrícula · ${name}`))
+  }
+})
+
+test('a teacher invitation clearly identifies registration on behalf of a student', () => {
+  const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'judo', perfil: 'professor' }, { '/enrollment/osc/classes?curso=judo': { data: { organization: 'OSC', course: { id: 'judo', nome: 'Judô' }, classes: [{ id: 'class-a', nome: 'A', vagas: 2 }] } } })
+  assert.match(html, /Professor: preencha a inscrição do aluno nesta atividade/)
+  assert.match(html, /aria-pressed="true"[^>]*>.*?Professor/s)
+})
+
+test('a direct invitation to an unrelated class does not collect student details', () => {
+  const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'judo', turma: 'karate-class' }, { '/enrollment/osc/classes?curso=judo': { data: { organization: 'OSC', course: { id: 'judo', nome: 'Judô' }, classes: [{ id: 'judo-class', nome: 'Judô A', vagas: 2 }] } } })
+  assert.match(html, /Esta turma não está disponível neste link/)
+  assert.doesNotMatch(html, /Como podemos chamar você/)
+})
+
+test('the invitations workspace provides directed links for the course and its own classes', () => {
+  const { html } = render('src/pages/[tenant]/cursos/[courseId].tsx', { aba: 'convites' }, { '/enrollment-admin/courses/judo': { data: course } }, { courseId: 'judo' })
+  for (const role of ['aluno','responsavel','professor']) assert.ok(html.includes(`/osc/inscricao?curso=judo&amp;perfil=${role}`))
+  assert.match(html, /\/osc\/inscricao\?curso=judo&amp;turma=a/)
+  assert.match(html, /Imagem e cores do convite/)
+  assert.match(html, /src="\/courses\/judo.png"/)
 })
 
 test('shows existing activity students even when no class has been assigned', () => {

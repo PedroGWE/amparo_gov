@@ -1,0 +1,38 @@
+{
+  "mode": "Built-in image_gen",
+  "purpose": "Capas ilustrativas de convites de cursos e modalidades",
+  "assets": [
+    {
+      "path": "apps/web/public/courses/jiu-jitsu.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape website invitation hero for a Brazilian social education program, JIU-JITSU course. Create a polished editorial sports photograph of two adult beginners practicing Brazilian jiu-jitsu on a clean navy blue padded dojo mat, one seated guard position and the other kneeling, controlled cooperative training, natural anatomically correct bodies, complete white and royal blue gis and white belts. Warm daylight in a welcoming modest Brazilian community sports school, uncluttered background. Composition: wide landscape 3:2, show full training movement centrally and enough room around subjects for responsive crops, no overlaid graphics. Palette: deep navy blue, teal and white. Mood: welcoming, focused, accessible, respectful. No text, letters, logos, watermarks, blood or injuries. This is an illustrative image for a course invitation, not a specific existing school."
+    },
+    {
+      "path": "apps/web/public/courses/karate.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. KARATE: an adult woman and man in white karate gis and white belts practicing standing basic kata punches into the air side by side, controlled technique, full bodies, clean dojo with a warm red accent wall and natural wood. Strong distinct red, cream and white palette. No grappling, no injury."
+    },
+    {
+      "path": "apps/web/public/courses/judo.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. JUDO: two adult beginners in white and blue judo gis and white belts practicing standing lapel-and-sleeve grips and a carefully controlled entry for a hip throw on blue padded mats, both still balanced with feet near the ground, full bodies. Indigo blue and white palette. Safe cooperative training, no impact or injury."
+    },
+    {
+      "path": "apps/web/public/courses/danca.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. DANCE: a small diverse group of adult women and men doing a lively coordinated contemporary dance class in a bright simple studio with wooden floor. Comfortable modest athletic clothing in plum, lavender and coral. Full-body welcoming dynamic movement, expressive friendly natural faces."
+    },
+    {
+      "path": "apps/web/public/courses/pilates.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. PILATES: a diverse small group of adult women of varied ages doing a beginner seated stretching and balance exercise on sage and teal mats, guided by a standing female instructor in a simple airy studio with soft greenery. Modest comfortable sports clothing. Sage green and cream palette. Calm wellbeing, approachable."
+    },
+    {
+      "path": "apps/web/public/courses/ingles.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. ENGLISH COURSE: a welcoming adult Brazilian woman teacher guiding two adult students around a shared desk, using blank colorful flashcards and notebooks in a bright community classroom. Diverse natural faces, warm engaged expressions. Sky blue and golden yellow classroom accents. Blank surfaces with no readable writing."
+    },
+    {
+      "path": "apps/web/public/courses/informatica.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. COMPUTER COURSE: a diverse adult male and female beginner student side by side in a bright accessible community computer classroom, a friendly adult instructor explaining a laptop, hands realistically resting at a keyboard. Screens show simple abstract blue interface shapes, no readable words. Indigo violet and cyan palette."
+    },
+    {
+      "path": "apps/web/public/courses/geral.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape hero photograph for a Brazilian community education course invitation. High-quality warm editorial photography, natural daylight, welcoming modest community school, realistic anatomically correct adults, authentic and accessible. Landscape 3:2, central subjects with room for responsive crops. No text, letters, branding, logos or watermarks. Illustrative scene, not a specific existing institution. GENERAL EDUCATION: three diverse adult learners and a welcoming adult teacher collaborating around a table with books and notebooks in a bright Brazilian community learning room with large windows. Relaxed hopeful engaged expressions. Royal blue, emerald and golden yellow accents, authentic unpretentious furniture. No readable writing."
+    }
+  ]
+}

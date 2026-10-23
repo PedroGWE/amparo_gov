@@ -1,5 +1,14 @@
 # Registro de validação
 
+## 2026-10-23 — convites públicos de matrícula
+
+- `pnpm lint` e tipagem do frontend: aprovados.
+- API: 20 suítes e 150 testes aprovados; frontend: 27 testes aprovados.
+- Build dos quatro pacotes e novo build após o ajuste de contraste: aprovados.
+- Navegador com API simulada: sete identidades de atividade, prévia de compartilhamento renderizada no servidor, perfis de aluno/professor, avanço com Enter sem envio antecipado, confirmação de reserva, filtro de turma, isolamento da sessão administrativa, persistência do tema e cópia do link aprovados.
+- Layouts desktop e celular verificados; nenhuma falha de JavaScript ou de carregamento de recursos no teste do navegador.
+- Migração aditiva: `20261023120000_course_invitation_visual` acrescenta `cursos.tema_visual`, sem alterar inscrições ou vagas.
+
 ## 2026-10-02 — linha de base
 
 | Comando | Resultado |
