@@ -522,7 +522,7 @@ export default function ProfessoresPage() {
   )
 
   const { data: projectsData } = useSWR('/projects-all', () =>
-    projectsService.list({ limit: 100 }),
+    projectsService.list({ limit: 100, include_legacy: 'true' }),
   )
   const projects = projectsData?.data ?? []
 

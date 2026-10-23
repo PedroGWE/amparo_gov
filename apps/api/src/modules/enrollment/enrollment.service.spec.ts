@@ -1,4 +1,71 @@
 import { EnrollmentService } from './enrollment.service'
+import type { ApplyEnrollmentDto } from './dto/enrollment.dto'
+
+describe('EnrollmentService course registration', () => {
+  const dto: ApplyEnrollmentDto = { curso_id: 'course-1', turma_id: 'class-1', aluno_nome: 'José Silva', aluno_nascimento: '2000-01-01', aluno_cpf: '12345678901', solicitante_tipo: 'ALUNO', solicitante_nome: 'José Silva', solicitante_contato: '61999999999', consentimento: true }
+  function setup() {
+    const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class-1', nome: 'Judô A', capacidade: 1, curso_id: 'course-1', project_id: 'project-1', curso: { ativo: true, inscricoes_abertas: true } }), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 'class-1' }) },
+      beneficiary: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'new-student' }) },
+      matricula: { findUnique: jest.fn().mockResolvedValue(null), count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: 'enrollment-1' }), findMany: jest.fn().mockResolvedValue([{ id: 'first-waiting' }]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    }
+    const prisma = { ...tx, tenant: { findUnique: jest.fn().mockResolvedValue({ id: 'tenant-1', name: 'OSC', status: 'ACTIVE', deleted_at: null }) }, curso: { findFirst: jest.fn().mockResolvedValue({ id: 'course-1', nome: 'Judô' }) }, $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)) }
+    return { tx, prisma, service: new EnrollmentService(prisma as never) }
+  }
+
+  it('filters public classes by an open course within the tenant', async () => {
+    const { prisma, service } = setup()
+    await service.publicClasses('osc', 'course-1')
+    expect(prisma.curso.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'course-1', tenant_id: 'tenant-1', ativo: true, inscricoes_abertas: true } }))
+    expect(prisma.turma.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenant_id: 'tenant-1', curso_id: 'course-1', deleted_at: null }) }))
+  })
+
+  it('rejects invalid or closed course links instead of displaying unrelated classes', async () => {
+    const { prisma, service } = setup()
+    prisma.curso.findFirst.mockResolvedValue(null)
+    await expect(service.publicClasses('osc', 'closed-course')).rejects.toThrow('indisponível')
+    expect(prisma.turma.findMany).not.toHaveBeenCalled()
+  })
+
+  it('rejects submitting a class from a different course before creating a student', async () => {
+    const { tx, service } = setup()
+    await expect(service.apply('osc', { ...dto, curso_id: 'other-course' })).rejects.toThrow('não pertence')
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects direct submissions to a closed course', async () => {
+    const { tx, service } = setup()
+    tx.turma.findFirst.mockResolvedValue({ id: 'class-1', capacidade: 1, curso_id: 'course-1', curso: { ativo: true, inscricoes_abertas: false } })
+    await expect(service.apply('osc', dto)).rejects.toThrow('encerradas')
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+  })
+
+  it('puts an existing student in another course on the reserve without duplicating their profile', async () => {
+    const { tx, service } = setup()
+    tx.beneficiary.findUnique.mockResolvedValue({ id: 'existing-student', name: 'Jose Silva', birth_date: new Date('2000-01-01'), deleted_at: null })
+    const result = await service.apply('osc', dto)
+    expect(result).toMatchObject({ status: 'EM_ESPERA', posicao_espera: 1 })
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+    expect(tx.matricula.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ aluno_id: 'existing-student' }) }))
+  })
+
+  it('rejects mismatched identity for an existing CPF without changing any student', async () => {
+    const { tx, service } = setup()
+    tx.beneficiary.findUnique.mockResolvedValue({ id: 'existing-student', name: 'Another student', birth_date: new Date('2000-01-01'), deleted_at: null })
+    await expect(service.apply('osc', dto)).rejects.toThrow('conferir os dados')
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+    expect(tx.matricula.create).not.toHaveBeenCalled()
+  })
+
+  it('promotes the oldest reserve registrations when capacity grows', async () => {
+    const { tx, service } = setup()
+    const result = await service.updateClass('tenant-1', 'class-1', { capacidade: 2 })
+    expect(result.promoted).toBe(1)
+    expect(tx.matricula.findMany).toHaveBeenCalledWith({ where: { turma_id: 'class-1', status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], take: 1, select: { id: true } })
+    expect(tx.$queryRaw).toHaveBeenCalled()
+  })
+})
 
 describe('EnrollmentService capacity', () => {
   function setup(activeCount: number) {

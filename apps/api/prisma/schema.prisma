@@ -619,6 +619,7 @@ model Tenant {
   saved_editais                SavedEdital[]
   professores                  Professor[]
   turmas                       Turma[]
+  cursos                       Curso[]
   matriculas                   Matricula[]
   conecta_atividades           Atividade[]
   entregas_atividades          EntregaAtividade[]
@@ -890,6 +891,9 @@ model Project {
   professor_vinculos     ProfessorProjeto[]
   turmas                 Turma[]
   transferegov_records   TransferegovRecord[]
+  cursos                 Curso[] @relation("CursoProjects")
+  legacy_course          Curso? @relation("CursoLegacyProject")
+  editais                Edital[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id])
@@ -1260,6 +1264,7 @@ model EmendaParlamentar {
   // Relations
   tenant  Tenant   @relation(fields: [tenant_id], references: [id])
   project Project? @relation(fields: [project_id], references: [id])
+  cursos  Curso[] @relation("CursoEmendas")
 
   @@index([tenant_id])
   @@index([project_id])
@@ -2575,6 +2580,7 @@ model UserInvite {
 model Edital {
   id                     String          @id @default(cuid())
   tenant_id              String?
+  project_id             String?
   fonte                  EditalFonte
   external_id            String?
   titulo                 String
@@ -2593,8 +2599,11 @@ model Edital {
   updated_at             DateTime        @updatedAt
   tenant                 Tenant?         @relation(fields: [tenant_id], references: [id])
   salvos                 SavedEdital[]
+  project                Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  cursos                 Curso[] @relation("CursoEditais")
 
   @@index([tenant_id])
+  @@index([project_id])
   @@index([fonte, external_id])
   @@map("editais")
 }
@@ -2737,10 +2746,34 @@ model HistoricoProfessor {
   @@map("historico_professores")
 }
 
+model Curso {
+  id                String @id @default(cuid())
+  tenant_id         String
+  nome              String
+  tipo              String @default("MODALIDADE")
+  descricao         String?
+  ativo             Boolean @default(true)
+  inscricoes_abertas Boolean @default(true)
+  legacy_project_id String? @unique
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  tenant            Tenant @relation(fields: [tenant_id], references: [id])
+  legacy_project    Project? @relation("CursoLegacyProject", fields: [legacy_project_id], references: [id], onDelete: SetNull)
+  projetos          Project[] @relation("CursoProjects")
+  emendas           EmendaParlamentar[] @relation("CursoEmendas")
+  editais           Edital[] @relation("CursoEditais")
+  turmas            Turma[]
+
+  @@unique([tenant_id, nome])
+  @@index([tenant_id, ativo])
+  @@map("cursos")
+}
+
 model Turma {
   id           String      @id @default(cuid())
   tenant_id    String
   project_id   String?
+  curso_id     String?
   professor_id String?
   nome         String
   capacidade   Int?
@@ -2750,6 +2783,7 @@ model Turma {
   updated_at   DateTime    @updatedAt
   tenant       Tenant      @relation(fields: [tenant_id], references: [id])
   project      Project?    @relation(fields: [project_id], references: [id])
+  curso        Curso?      @relation(fields: [curso_id], references: [id], onDelete: SetNull)
   matriculas   Matricula[]
   atividades   Atividade[]
   presencas    Presenca[]
@@ -2758,6 +2792,7 @@ model Turma {
 
   @@index([tenant_id])
   @@index([professor_id])
+  @@index([curso_id])
   @@map("turmas")
 }
 

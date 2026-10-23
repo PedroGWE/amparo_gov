@@ -148,9 +148,10 @@ export default function ProjetosPage() {
           <p className="text-sm font-medium text-emerald-700">Gestão de projetos sociais</p>
           <h1 className="mt-1 text-2xl font-semibold text-gray-900">Projetos</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Acompanhe alunos, turmas, chamada, rotina, entregas e prazos em um só lugar.
+            Acompanhe os projetos e seus instrumentos de financiamento. Organize as atividades em Cursos e modalidades.
           </p>
         </div>
+        <Link href={`/${tenant}/cursos`} className="btn-ghost">Cursos e modalidades</Link>
         <button className="btn-primary flex items-center gap-2" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" /> Novo projeto
         </button>

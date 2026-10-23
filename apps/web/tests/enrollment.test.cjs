@@ -56,7 +56,7 @@ test('opens the first class and displays confirmed and waiting registrations', (
   const { html, calls } = renderPage('matriculas', { data: records })
   assert.match(html, /Aluno do link/)
   assert.match(html, /Aluno em espera/)
-  const queries = calls.filter((call) => typeof call.key === 'string' && call.key.startsWith('/enrollment-admin/'))
+  const queries = calls.filter((call) => typeof call.key === 'string' && call.key.startsWith('/enrollment-admin/classes'))
   assert.equal(queries.length, 2)
   for (const query of queries) assert.equal(query.options.refreshInterval, 15000)
 })

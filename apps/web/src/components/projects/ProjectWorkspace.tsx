@@ -37,6 +37,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Badge } from '@/components/ui/Badge'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { ProjectManagementPanel } from './ProjectManagementPanel'
+import { ProjectFundingPanel } from './ProjectFundingPanel'
 import {
   projectsService,
   type ProjectDetails,
@@ -407,6 +408,7 @@ export default function ProjectWorkspace({
 
       {activeSection === 'resumo' && (
         <div className="space-y-5">
+          <ProjectFundingPanel project={project} tenant={tenant} />
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric
               label="Execução das atividades"

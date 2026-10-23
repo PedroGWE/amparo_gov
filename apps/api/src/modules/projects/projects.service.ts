@@ -28,6 +28,7 @@ const PROJECT_SELECT = {
   total_budget: true,
   approved_budget: true,
   tags: true,
+  cursos: { select: { id: true, nome: true, tipo: true } },
   created_at: true,
   updated_at: true,
   manager: { select: { id: true, name: true, email: true, avatar_url: true } },
@@ -39,7 +40,7 @@ export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
   async overview(tenantId: string) {
-    const projectWhere: Prisma.ProjectWhereInput = { tenant_id: tenantId, deleted_at: null }
+    const projectWhere: Prisma.ProjectWhereInput = { tenant_id: tenantId, deleted_at: null, legacy_course: { is: null } }
     const taskWhere: Prisma.ProjectTaskWhereInput = { project: { tenant_id: tenantId, deleted_at: null } }
     const today = new Date()
     const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
@@ -83,6 +84,7 @@ export class ProjectsService {
     const limit = q.limit ?? 20
     const where: Prisma.ProjectWhereInput = {
       tenant_id: tenantId,
+      ...(!q.include_legacy && { legacy_course: { is: null } }),
       deleted_at: null,
       ...(q.status && { status: q.status }),
       ...(q.type && { type: q.type }),
@@ -147,6 +149,9 @@ export class ProjectsService {
           include: { user: { select: { id: true, name: true, email: true, avatar_url: true } } },
         },
         phases: { orderBy: { order: 'asc' } },
+        cursos: { where: { tenant_id: tenantId }, select: { id: true, nome: true, tipo: true } },
+        emendas: { where: { tenant_id: tenantId }, select: { id: true, number: true, year: true, parlamentar_name: true, value: true } },
+        editais: { where: { tenant_id: tenantId }, select: { id: true, titulo: true, link_oficial: true } },
         _count: { select: { tasks: true, risks: true, documents: true, beneficiaries: true } },
       },
     })

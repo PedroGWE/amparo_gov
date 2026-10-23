@@ -58,6 +58,10 @@ export interface ProjectMember {
 }
 
 export interface ProjectDetails extends Omit<Project, '_count'> {
+  cursos?: { id: string; nome: string; tipo: string }[]
+  emendas?: { id: string; number: string | null; year: number; parlamentar_name: string; value: string | number }[]
+  editais?: { id: string; titulo: string; link_oficial: string | null }[]
+  funding_sources?: { source?: string; instrument?: string; proposal?: string; process?: string; official_status?: string; released_amount?: number; counterpart_amount?: number; reference_date?: string; official_url?: string; document_urls?: { title: string; url: string }[] }[]
   manager_id?: string | null
   members: ProjectMember[]
   phases: ProjectPhase[]

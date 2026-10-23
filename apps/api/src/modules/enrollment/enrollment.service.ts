@@ -7,20 +7,22 @@ import type { ApplyEnrollmentDto, SaveClassDto, UpdateClassDto } from './dto/enr
 export class EnrollmentService {
   constructor(private prisma: PrismaService) {}
 
-  async publicClasses(slug: string) {
+  async publicClasses(slug: string, courseId?: string) {
     const tenant = await this.activeTenant(slug)
+    const course = courseId ? await this.prisma.curso.findFirst({ where: { id: courseId, tenant_id: tenant.id, ativo: true, inscricoes_abertas: true }, select: { id: true, nome: true, tipo: true } }) : null
+    if (courseId && !course) throw new NotFoundException('Curso ou modalidade indisponível para matrícula')
     const classes = await this.prisma.turma.findMany({
-      where: { tenant_id: tenant.id, deleted_at: null, capacidade: { not: null } },
-      select: { id: true, nome: true, capacidade: true, project: { select: { name: true } }, _count: { select: { matriculas: { where: { status: 'ATIVA' } } } } },
+      where: { tenant_id: tenant.id, deleted_at: null, capacidade: { not: null }, ...(courseId ? { curso_id: courseId } : { OR: [{ curso_id: null }, { curso: { ativo: true, inscricoes_abertas: true } }] }) },
+      select: { id: true, nome: true, capacidade: true, curso: { select: { id: true, nome: true, tipo: true } }, project: { select: { name: true } }, _count: { select: { matriculas: { where: { status: 'ATIVA' } } } } },
       orderBy: { nome: 'asc' },
     })
-    return { organization: tenant.name, classes: classes.map(({ _count, ...turma }) => ({ ...turma, vagas: Math.max(0, (turma.capacidade ?? 0) - _count.matriculas) })) }
+    return { organization: tenant.name, course, classes: classes.map(({ _count, ...turma }) => ({ ...turma, vagas: Math.max(0, (turma.capacidade ?? 0) - _count.matriculas) })) }
   }
 
   async adminClasses(tenantId: string) {
     const classes = await this.prisma.turma.findMany({
       where: { tenant_id: tenantId, deleted_at: null },
-      select: { id: true, nome: true, capacidade: true, project: { select: { name: true } }, _count: { select: { matriculas: { where: { status: 'ATIVA' } } } } },
+      select: { id: true, nome: true, capacidade: true, curso_id: true, curso: { select: { id: true, nome: true } }, project: { select: { name: true } }, _count: { select: { matriculas: { where: { status: 'ATIVA' } } } } },
       orderBy: { nome: 'asc' },
     })
     const waiting = await this.prisma.matricula.groupBy({
@@ -32,13 +34,15 @@ export class EnrollmentService {
 
   async createClass(tenantId: string, dto: SaveClassDto) {
     if (dto.project_id) await this.assertProject(tenantId, dto.project_id)
-    return this.prisma.turma.create({ data: { tenant_id: tenantId, nome: dto.nome.trim(), capacidade: dto.capacidade, project_id: dto.project_id || null } })
+    if (dto.curso_id) await this.assertCourse(tenantId, dto.curso_id)
+    return this.prisma.turma.create({ data: { tenant_id: tenantId, nome: dto.nome.trim(), capacidade: dto.capacidade, project_id: dto.project_id || null, curso_id: dto.curso_id || null } })
   }
 
   async updateClass(tenantId: string, classId: string, dto: UpdateClassDto) {
+    if (dto.curso_id) await this.assertCourse(tenantId, dto.curso_id)
     return this.prisma.$transaction(async (tx) => {
       await this.lockClass(tx, tenantId, classId)
-      const turma = await tx.turma.update({ where: { id: classId }, data: { ...(dto.nome !== undefined && { nome: dto.nome.trim() }), ...(dto.capacidade !== undefined && { capacidade: dto.capacidade }) } })
+      const turma = await tx.turma.update({ where: { id: classId }, data: { ...(dto.nome !== undefined && { nome: dto.nome.trim() }), ...(dto.capacidade !== undefined && { capacidade: dto.capacidade }), ...(dto.curso_id !== undefined && { curso_id: dto.curso_id || null }) } })
       let promoted = 0
       if (dto.capacidade !== undefined) {
         const active = await tx.matricula.count({ where: { turma_id: classId, status: 'ATIVA' } })
@@ -77,9 +81,17 @@ export class EnrollmentService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const turma = await this.lockClass(tx, tenant.id, dto.turma_id)
+        if (dto.curso_id && turma.curso_id !== dto.curso_id) throw new BadRequestException('A turma não pertence ao curso ou modalidade deste link')
+        if (turma.curso && (!turma.curso.ativo || !turma.curso.inscricoes_abertas)) throw new BadRequestException('As inscrições deste curso ou modalidade estão encerradas')
         if (cpf) {
-          const existing = await tx.beneficiary.findUnique({ where: { tenant_id_cpf: { tenant_id: tenant.id, cpf } }, select: { id: true } })
-          if (existing) throw new ConflictException('Já existe um cadastro para este aluno. Procure a organização para realizar a matrícula.')
+          const existing = await tx.beneficiary.findUnique({ where: { tenant_id_cpf: { tenant_id: tenant.id, cpf } }, select: { id: true, name: true, birth_date: true, deleted_at: true } })
+          if (existing) {
+            const normalizeName = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR')
+            if (existing.deleted_at || normalizeName(existing.name) !== normalizeName(dto.aluno_nome) || existing.birth_date?.toISOString().slice(0, 10) !== birthDate.toISOString().slice(0, 10)) {
+              throw new ConflictException('Já existe um cadastro para este aluno. Procure a organização para conferir os dados e realizar a matrícula.')
+            }
+            return this.enrollLocked(tx, tenant.id, turma, existing.id, dto.solicitante_tipo, dto.solicitante_nome, dto.solicitante_contato)
+          }
         }
         const sameEnrollment = await tx.beneficiary.findFirst({
           where: { tenant_id: tenant.id, name: { equals: dto.aluno_nome.trim(), mode: 'insensitive' }, birth_date: birthDate, matriculas: { some: { turma_id: turma.id, status: { in: ['ATIVA', 'EM_ESPERA'] } } } },
@@ -183,7 +195,7 @@ export class EnrollmentService {
 
   private async lockClass(tx: Prisma.TransactionClient, tenantId: string, classId: string) {
     await tx.$queryRaw`SELECT id FROM "turmas" WHERE id = ${classId} AND tenant_id = ${tenantId} AND deleted_at IS NULL FOR UPDATE`
-    const turma = await tx.turma.findFirst({ where: { id: classId, tenant_id: tenantId, deleted_at: null }, select: { id: true, nome: true, capacidade: true, project_id: true } })
+    const turma = await tx.turma.findFirst({ where: { id: classId, tenant_id: tenantId, deleted_at: null }, select: { id: true, nome: true, capacidade: true, project_id: true, curso_id: true, curso: { select: { ativo: true, inscricoes_abertas: true } } } })
     if (!turma) throw new NotFoundException('Turma não encontrada')
     return turma
   }
@@ -196,6 +208,11 @@ export class EnrollmentService {
   private async assertProject(tenantId: string, projectId: string) {
     const project = await this.prisma.project.findFirst({ where: { id: projectId, tenant_id: tenantId, deleted_at: null }, select: { id: true } })
     if (!project) throw new NotFoundException('Projeto não encontrado')
+  }
+
+  private async assertCourse(tenantId: string, id: string) {
+    const course = await this.prisma.curso.findFirst({ where: { id, tenant_id: tenantId }, select: { id: true } })
+    if (!course) throw new NotFoundException('Curso ou modalidade não encontrado')
   }
 
   private async activeTenant(slug: string) {

@@ -33,6 +33,7 @@ const navItems = [
   { label: 'Educa Amparo Gov', icon: GraduationCap, href: 'educa' },
   { label: 'Dashboard', icon: LayoutDashboard, href: 'dashboard' },
   { label: 'Projetos', icon: FolderKanban, href: 'projetos' },
+  { label: 'Cursos e modalidades', icon: GraduationCap, href: 'cursos' },
   { label: 'Editais', icon: Megaphone, href: 'editais' },
   { label: 'Beneficiários', icon: Users, href: 'beneficiarios' },
   { label: 'Matrículas', icon: ClipboardList, href: 'matriculas' },

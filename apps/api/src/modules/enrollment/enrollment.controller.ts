@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { Public } from '../../common/decorators/public.decorator'
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
 import { ApplyEnrollmentDto, SaveClassDto, UpdateClassDto } from './dto/enrollment.dto'
 import { EnrollmentService } from './enrollment.service'
+import { CoursesService } from './courses.service'
+import { BatchClassesDto, SaveCourseDto } from './dto/course.dto'
 
 @Controller('enrollment')
 export class EnrollmentController {
@@ -11,8 +13,8 @@ export class EnrollmentController {
 
   @Public()
   @Get(':slug/classes')
-  publicClasses(@Param('slug') slug: string) {
-    return this.enrollment.publicClasses(slug)
+  publicClasses(@Param('slug') slug: string, @Query('curso') courseId?: string) {
+    return this.enrollment.publicClasses(slug, courseId)
   }
 
   @Public()
@@ -25,7 +27,22 @@ export class EnrollmentController {
 @Controller('enrollment-admin')
 @RequirePermissions('turmas:manage')
 export class EnrollmentAdminController {
-  constructor(private enrollment: EnrollmentService) {}
+  constructor(private enrollment: EnrollmentService, private courses: CoursesService) {}
+
+  @Get('courses')
+  listCourses(@CurrentUser('tenantId') tenantId: string) { return this.courses.list(tenantId) }
+
+  @Get('courses/options')
+  courseOptions(@CurrentUser('tenantId') tenantId: string) { return this.courses.options(tenantId) }
+
+  @Post('courses')
+  createCourse(@CurrentUser('tenantId') tenantId: string, @Body() dto: SaveCourseDto) { return this.courses.save(tenantId, dto) }
+
+  @Patch('courses/:id')
+  updateCourse(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string, @Body() dto: SaveCourseDto) { return this.courses.save(tenantId, dto, id) }
+
+  @Post('courses/:id/classes')
+  courseClasses(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string, @Body() dto: BatchClassesDto) { return this.courses.createClasses(tenantId, id, dto) }
 
   @Get('classes')
   classes(@CurrentUser('tenantId') tenantId: string) {
