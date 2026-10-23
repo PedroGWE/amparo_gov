@@ -104,6 +104,129 @@ export class EducaService {
     ])
     return { alunos, professores, projects }
   }
+
+  async overview(u: JwtPayload) {
+    const classes = await this.classes(u)
+    const classIds = classes.map((item) => item.id)
+    const teacher = this.manager(u) || u.permissions.includes('conecta:teacher')
+    const classWhere = { tenant_id: u.tenantId, turma_id: { in: classIds } }
+    const [aulas, activities, memberships, pendingAttendance, materials, profile, attendance] =
+      await Promise.all([
+        this.db.educaAula.findMany({
+          where: { ...classWhere, fim: { gte: new Date() } },
+          select: {
+            id: true,
+            titulo: true,
+            inicio: true,
+            fim: true,
+            meet_url: true,
+            turma: { select: { id: true, nome: true } },
+          },
+          orderBy: { inicio: 'asc' },
+          take: 6,
+        }),
+        this.db.atividade.findMany({
+          where: { ...classWhere, status: { not: 'RASCUNHO' } },
+          select: {
+            id: true,
+            titulo: true,
+            prazo: true,
+            turma: { select: { id: true, nome: true } },
+            entregas: {
+              where: teacher ? {} : { matricula: { aluno: { user_id: u.sub } } },
+              select: { id: true, status: true },
+            },
+          },
+          orderBy: [{ prazo: 'asc' }, { created_at: 'desc' }],
+        }),
+        this.db.matricula.findMany({
+          where: {
+            ...classWhere,
+            status: 'ATIVA',
+            aluno: { deleted_at: null, ...(teacher ? {} : { user_id: u.sub }) },
+          },
+          select: { aluno_id: true },
+        }),
+        teacher
+          ? this.db.educaAula.count({
+              where: { ...classWhere, fim: { lte: new Date() }, chamada_enviada_at: null },
+            })
+          : 0,
+        this.db.educaMaterial.count({ where: classWhere }),
+        this.db.user.findFirst({
+          where: { id: u.sub, tenant_id: u.tenantId },
+          select: {
+            name: true,
+            student_code: true,
+            email: true,
+            tenant: { select: { name: true } },
+          },
+        }),
+        teacher
+          ? []
+          : this.db.educaPresenca.findMany({
+              where: {
+                aula: { ...classWhere, chamada_enviada_at: { not: null } },
+                matricula: { tenant_id: u.tenantId, aluno: { user_id: u.sub } },
+              },
+              select: { status: true },
+            }),
+      ])
+    const pending = teacher
+      ? activities.reduce(
+          (sum, activity) =>
+            sum + activity.entregas.filter((item) => item.status === 'ENTREGUE').length,
+          0,
+        )
+      : activities.filter((activity) => !activity.entregas.length).length
+    const completed = teacher
+      ? activities.reduce(
+          (sum, activity) =>
+            sum + activity.entregas.filter((item) => item.status === 'AVALIADA').length,
+          0,
+        )
+      : activities.filter((activity) => activity.entregas[0]?.status === 'AVALIADA').length
+    const nextActivities = activities.map((activity) => ({
+      id: activity.id,
+      titulo: activity.titulo,
+      prazo: activity.prazo,
+      turma: activity.turma,
+      pendentes: teacher
+        ? activity.entregas.filter((item) => item.status === 'ENTREGUE').length
+        : !activity.entregas.length
+          ? 1
+          : 0,
+      status: teacher ? 'PROFESSOR' : (activity.entregas[0]?.status ?? 'PENDENTE'),
+    }))
+    return {
+      perfil: profile
+        ? {
+            nome: profile.name,
+            instituto: profile.tenant.name,
+            matricula: profile.student_code,
+            email: profile.email.endsWith('@educa.invalid') ? null : profile.email,
+          }
+        : null,
+      resumo: {
+        turmas: classes.length,
+        alunos: new Set(memberships.map((item) => item.aluno_id)).size,
+        aulas: classes.reduce((sum, item) => sum + item._count.aulas, 0),
+        materiais: materials,
+        pendentes: pending,
+        avaliadas: completed,
+        chamadas_pendentes: pendingAttendance,
+        atividades: activities.length,
+      },
+      proximas_aulas: aulas,
+      atividades: nextActivities.sort((a, b) => b.pendentes - a.pendentes).slice(0, 8),
+      frequencia: teacher
+        ? null
+        : {
+            total: attendance.length,
+            presentes: attendance.filter((item) => item.status === 'PRESENTE').length,
+          },
+    }
+  }
   async account(u: JwtPayload, dto: AccountDto) {
     this.requireManager(u)
     const student = dto.perfil === 'aluno'

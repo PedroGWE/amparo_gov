@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="254" height="82" viewBox="0 0 254 82" fill="none">
+ <defs><linearGradient id="b" x1="5" y1="8" x2="38" y2="64" gradientUnits="userSpaceOnUse"><stop stop-color="#1477F8"/><stop offset="1" stop-color="#0652CC"/></linearGradient><linearGradient id="g" x1="40" y1="8" x2="73" y2="64" gradientUnits="userSpaceOnUse"><stop stop-color="#50CB78"/><stop offset="1" stop-color="#21A955"/></linearGradient></defs>
+ <path d="M3 17C15 10 26 10 35 18V57C25 50 14 49 3 55V17Z" fill="url(#b)"/><path d="M39 18C48 10 59 10 71 17V55C60 49 49 50 39 57V18Z" fill="url(#g)"/><path d="M3 60C15 53 26 53 37 63C48 53 59 53 71 60V67C58 61 47 62 37 71C27 62 16 61 3 67V60Z" fill="#FBC517"/>
+ <text x="79" y="52" fill="#095BD8" font-family="Arial,sans-serif" font-size="51" font-weight="800" letter-spacing="-2.7">Educa</text><text x="82" y="73" fill="#095BD8" font-family="Arial,sans-serif" font-size="20" font-weight="800" letter-spacing="-.6">Amparo<tspan fill="#20A94F" letter-spacing="-.8">GOV</tspan></text>
+</svg>

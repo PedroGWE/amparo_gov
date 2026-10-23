@@ -18,6 +18,9 @@ import {
 @Controller('educa')
 export class EducaController {
   constructor(private service: EducaService) {}
+  @Get('resumo') overview(@CurrentUser() u: JwtPayload) {
+    return this.service.overview(u)
+  }
   @Get('turmas') classes(@CurrentUser() u: JwtPayload) {
     return this.service.classes(u)
   }

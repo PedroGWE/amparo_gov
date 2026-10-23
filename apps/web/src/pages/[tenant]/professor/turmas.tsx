@@ -1,3 +1,3 @@
-import type { GetServerSideProps } from 'next'
+import { educationRedirect } from '@/components/educa/educa-route'
 export default function Page() { return null }
-export const getServerSideProps: GetServerSideProps = async ctx => ({ redirect: { destination: `/${encodeURIComponent(String(ctx.params?.tenant))}/professor`, permanent: false } })
+export const getServerSideProps = educationRedirect('professor', 'turmas')

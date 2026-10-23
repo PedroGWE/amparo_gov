@@ -54,3 +54,34 @@ export interface Catalog {
   professores: { id: string; nome_completo: string; user_id: string | null }[]
   projects: { id: string; name: string }[]
 }
+
+export interface Overview {
+  perfil: { nome: string; instituto: string; matricula: string | null; email: string | null } | null
+  resumo: {
+    turmas: number
+    alunos: number
+    aulas: number
+    materiais: number
+    pendentes: number
+    avaliadas: number
+    chamadas_pendentes: number
+    atividades: number
+  }
+  proximas_aulas: {
+    id: string
+    titulo: string
+    inicio: string
+    fim: string
+    meet_url: string
+    turma: { id: string; nome: string }
+  }[]
+  atividades: {
+    id: string
+    titulo: string
+    prazo: string | null
+    turma: { id: string; nome: string }
+    pendentes: number
+    status: string
+  }[]
+  frequencia: { total: number; presentes: number } | null
+}
