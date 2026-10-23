@@ -6,9 +6,10 @@ describe('EnrollmentService course registration', () => {
   function setup() {
     const tx = {
       $queryRaw: jest.fn().mockResolvedValue([]),
-      turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class-1', nome: 'Judô A', capacidade: 1, curso_id: 'course-1', project_id: 'project-1', curso: { ativo: true, inscricoes_abertas: true } }), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 'class-1' }) },
+      turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class-1', nome: 'Judô A', capacidade: 1, curso_id: 'course-1', project_id: 'project-1', curso: { ativo: true, inscricoes_abertas: true } }), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 'class-1', curso_id: 'course-1' }) },
+      curso: { update: jest.fn().mockResolvedValue({ id: 'course-1' }) },
       beneficiary: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'new-student' }) },
-      matricula: { findUnique: jest.fn().mockResolvedValue(null), count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: 'enrollment-1' }), findMany: jest.fn().mockResolvedValue([{ id: 'first-waiting' }]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      matricula: { findUnique: jest.fn().mockResolvedValue(null), count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: 'enrollment-1' }), findMany: jest.fn().mockResolvedValue([{ id: 'first-waiting', aluno_id: 'waiting-student' }]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     }
     const prisma = { ...tx, tenant: { findUnique: jest.fn().mockResolvedValue({ id: 'tenant-1', name: 'OSC', status: 'ACTIVE', deleted_at: null }) }, curso: { findFirst: jest.fn().mockResolvedValue({ id: 'course-1', nome: 'Judô' }) }, $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)) }
     return { tx, prisma, service: new EnrollmentService(prisma as never) }
@@ -46,6 +47,7 @@ describe('EnrollmentService course registration', () => {
     tx.beneficiary.findUnique.mockResolvedValue({ id: 'existing-student', name: 'Jose Silva', birth_date: new Date('2000-01-01'), deleted_at: null })
     const result = await service.apply('osc', dto)
     expect(result).toMatchObject({ status: 'EM_ESPERA', posicao_espera: 1 })
+    expect(tx.curso.update).not.toHaveBeenCalled()
     expect(tx.beneficiary.create).not.toHaveBeenCalled()
     expect(tx.matricula.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ aluno_id: 'existing-student' }) }))
   })
@@ -62,8 +64,24 @@ describe('EnrollmentService course registration', () => {
     const { tx, service } = setup()
     const result = await service.updateClass('tenant-1', 'class-1', { capacidade: 2 })
     expect(result.promoted).toBe(1)
-    expect(tx.matricula.findMany).toHaveBeenCalledWith({ where: { turma_id: 'class-1', status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], take: 1, select: { id: true } })
+    expect(tx.matricula.findMany).toHaveBeenCalledWith({ where: { turma_id: 'class-1', status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], take: 1, select: { id: true, aluno_id: true } })
+    expect(tx.curso.update).toHaveBeenCalledWith({ where: { id: 'course-1' }, data: { alunos: { connect: { id: 'waiting-student' } } } })
     expect(tx.$queryRaw).toHaveBeenCalled()
+  })
+
+  it('links a newly confirmed student to the course in the same transaction', async () => {
+    const { tx, service } = setup()
+    tx.matricula.count.mockResolvedValue(0)
+    await expect(service.apply('osc', dto)).resolves.toMatchObject({ status: 'ATIVA' })
+    expect(tx.curso.update).toHaveBeenCalledWith({ where: { id: 'course-1' }, data: { alunos: { connect: { id: 'new-student' } } } })
+  })
+
+  it('links active students when their existing class is assigned to a course', async () => {
+    const { tx, service, prisma } = setup()
+    prisma.curso.findFirst.mockResolvedValue({ id: 'course-1', nome: 'Judô' })
+    await service.updateClass('tenant-1', 'class-1', { curso_id: 'course-1' })
+    expect(tx.matricula.findMany).toHaveBeenCalledWith({ where: { tenant_id: 'tenant-1', turma_id: 'class-1', status: 'ATIVA' }, select: { aluno_id: true } })
+    expect(tx.curso.update).toHaveBeenCalledWith({ where: { id: 'course-1' }, data: { alunos: { connect: [{ id: 'waiting-student' }] } } })
   })
 })
 

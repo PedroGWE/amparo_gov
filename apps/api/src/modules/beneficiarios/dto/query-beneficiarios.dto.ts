@@ -17,6 +17,10 @@ export class QueryBeneficiariosDto {
 
   @IsOptional()
   @IsString()
+  curso_id?: string
+
+  @IsOptional()
+  @IsString()
   turma?: string
 
   @IsOptional()

@@ -17,6 +17,7 @@ export interface Beneficiario {
   termo_consentimento: boolean
   autorizacao_uso_imagem: boolean
   project: { id: string; name: string } | null
+  cursos?: { id: string; nome: string; tipo: 'CURSO' | 'MODALIDADE' }[]
   _count: { responsaveis: number; vinculos_projetos: number }
   created_at: string
   updated_at: string

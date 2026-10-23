@@ -11,10 +11,39 @@ describe('CoursesService links and classes', () => {
       emendaParlamentar: { count: jest.fn().mockResolvedValue(0) },
       edital: { count: jest.fn().mockResolvedValue(0) },
       turma: { create: jest.fn().mockImplementation(({ data }) => Promise.resolve(data)) },
+      beneficiary: { findFirst: jest.fn().mockResolvedValue({ id: 'student-1' }), findMany: jest.fn().mockResolvedValue([]) },
     }
     const db = { ...tx, $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)) }
     return { tx, service: new CoursesService(db as never) }
   }
+
+  it('lists only linked students from the current organization', async () => {
+    const { tx, service } = setup()
+    await service.students('tenant-1', 'course-1')
+    expect(tx.beneficiary.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenant_id: 'tenant-1', deleted_at: null, cursos: { some: { id: 'course-1', tenant_id: 'tenant-1' } } } }))
+  })
+
+  it('does not disclose a roster for a foreign course', async () => {
+    const { tx, service } = setup()
+    tx.curso.findFirst.mockResolvedValue(null)
+    await expect(service.students('tenant-1', 'other-course')).rejects.toThrow('não encontrado')
+    expect(tx.beneficiary.findMany).not.toHaveBeenCalled()
+  })
+
+  it('connects an existing student without changing class enrollments or capacity', async () => {
+    const { tx, service } = setup()
+    await expect(service.linkStudent('tenant-1', 'course-1', 'student-1')).resolves.toEqual({ linked: 'student-1', curso_id: 'course-1' })
+    expect(tx.beneficiary.findFirst).toHaveBeenCalledWith({ where: { id: 'student-1', tenant_id: 'tenant-1', deleted_at: null }, select: { id: true } })
+    expect(tx.curso.update).toHaveBeenCalledWith({ where: { id: 'course-1' }, data: { alunos: { connect: { id: 'student-1' } } } })
+    expect(tx.turma.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects linking a student from another organization', async () => {
+    const { tx, service } = setup()
+    tx.beneficiary.findFirst.mockResolvedValue(null)
+    await expect(service.linkStudent('tenant-1', 'course-1', 'foreign-student')).rejects.toThrow('Aluno não encontrado')
+    expect(tx.curso.update).not.toHaveBeenCalled()
+  })
 
   it('rejects project links outside the current organization', async () => {
     const { tx, service } = setup()

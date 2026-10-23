@@ -10,7 +10,6 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function render(relative, query, states) {
   const calls = []
   const filename = path.resolve(__dirname, '..', relative)
-  const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const useSWR = (key, fetcher, options) => { calls.push({ key, fetcher, options }); return { ...states[key], mutate: async () => {} } }
   const mocks = {
     swr: { __esModule: true, default: useSWR },
@@ -21,9 +20,13 @@ function render(relative, query, states) {
     '@/components/ui/Modal': { Modal: () => null },
     '@/lib/api': { __esModule: true, default: {}, publicApi: {} },
   }
-  const module = { exports: {} }
-  vm.runInNewContext(code, { module, exports: module.exports, process, console, require: name => Object.hasOwn(mocks, name) ? mocks[name] : require(name) }, { filename })
-  return { html: renderToStaticMarkup(React.createElement(module.exports.default)), calls }
+  function load(filename) {
+    const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
+    const module = { exports: {} }
+    vm.runInNewContext(compiled, { module, exports: module.exports, process, console, require: name => Object.hasOwn(mocks, name) ? mocks[name] : name.startsWith('@/') ? load(path.resolve(__dirname, '..', 'src', `${name.slice(2)}.tsx`)) : require(name) }, { filename })
+    return module.exports
+  }
+  return { html: renderToStaticMarkup(React.createElement(load(filename).default)), calls }
 }
 
 const course = { id: 'judo', nome: 'Judô', tipo: 'MODALIDADE', ativo: true, inscricoes_abertas: true, descricao: '', projetos: [], emendas: [], editais: [], turmas: [{ id: 'a', nome: 'Turma A', capacidade: 20, inscritos: 20, espera: 3, vagas: 0 }] }
@@ -63,4 +66,29 @@ test('public form requests only the course specified in its link', () => {
 test('public form does not silently fall back when the course is unavailable', () => {
   const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'closed' }, { '/enrollment/osc/classes?curso=closed': { error: new Error('not found') } })
   assert.match(html, /inscrições encerradas/)
+})
+
+test('shows existing activity students even when no class has been assigned', () => {
+  const { html } = render('src/pages/[tenant]/cursos.tsx', {}, {
+    '/enrollment-admin/courses': { data: [{ ...course, total_alunos: 2, turmas: [] }] },
+    '/enrollment-admin/courses/judo/students': { data: [
+      { id: 'b1', name: 'Aluno já cadastrado', status: 'ATIVO', matriculas: [] },
+      { id: 'b2', name: 'Aluna de duas modalidades', status: 'ATIVO', matriculas: [] },
+    ] },
+  })
+  assert.match(html, /Alunos vinculados \(2\)/)
+  assert.match(html, /Aluno já cadastrado/)
+  assert.match(html, /Aluna de duas modalidades/)
+  assert.match(html, /Sem turma definida nesta atividade/)
+  assert.match(html, /\/osc\/beneficiarios\?aluno=b1/)
+  assert.match(html, /\/osc\/beneficiarios\?curso=judo/)
+})
+
+test('a failed course roster is shown as an error instead of an empty activity', () => {
+  const { html } = render('src/pages/[tenant]/cursos.tsx', {}, {
+    '/enrollment-admin/courses': { data: [course] },
+    '/enrollment-admin/courses/judo/students': { error: new Error('unavailable') },
+  })
+  assert.match(html, /Não foi possível carregar os alunos/)
+  assert.doesNotMatch(html, /Nenhum aluno vinculado a esta atividade/)
 })

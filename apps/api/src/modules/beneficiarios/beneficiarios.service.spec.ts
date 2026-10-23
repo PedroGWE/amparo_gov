@@ -3,6 +3,12 @@ import { BeneficiariosService } from './beneficiarios.service'
 describe('BeneficiariosService project selection', () => {
   const tenantId = 'tenant-1'
 
+  it('filters a course roster and name search together inside the tenant', async () => {
+    const prisma = { beneficiary: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) } }
+    await new BeneficiariosService(prisma as never).findAll(tenantId, { curso_id: 'course-1', search: 'Ana' })
+    expect(prisma.beneficiary.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenant_id: tenantId, deleted_at: null, cursos: { some: { id: 'course-1', tenant_id: tenantId } }, OR: expect.arrayContaining([{ name: { contains: 'Ana', mode: 'insensitive' } }]) }), select: expect.objectContaining({ cursos: expect.objectContaining({ select: { id: true, nome: true, tipo: true } }) }) }))
+  })
+
   it('saves a new beneficiary without a project when the form sends an empty selection', async () => {
     const prisma = {
       beneficiary: { create: jest.fn().mockResolvedValue({ id: 'beneficiary-1' }) },

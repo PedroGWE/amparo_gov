@@ -43,15 +43,20 @@ export class EnrollmentService {
     return this.prisma.$transaction(async (tx) => {
       await this.lockClass(tx, tenantId, classId)
       const turma = await tx.turma.update({ where: { id: classId }, data: { ...(dto.nome !== undefined && { nome: dto.nome.trim() }), ...(dto.capacidade !== undefined && { capacidade: dto.capacidade }), ...(dto.curso_id !== undefined && { curso_id: dto.curso_id || null }) } })
+      if (dto.curso_id) {
+        const students = await tx.matricula.findMany({ where: { tenant_id: tenantId, turma_id: classId, status: 'ATIVA' }, select: { aluno_id: true } })
+        if (students.length) await tx.curso.update({ where: { id: dto.curso_id }, data: { alunos: { connect: students.map(item => ({ id: item.aluno_id })) } } })
+      }
       let promoted = 0
       if (dto.capacidade !== undefined) {
         const active = await tx.matricula.count({ where: { turma_id: classId, status: 'ATIVA' } })
         const vacancies = Math.max(0, dto.capacidade - active)
         if (vacancies > 0) {
-          const waiting = await tx.matricula.findMany({ where: { turma_id: classId, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], take: vacancies, select: { id: true } })
+          const waiting = await tx.matricula.findMany({ where: { turma_id: classId, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], take: vacancies, select: { id: true, aluno_id: true } })
           if (waiting.length) {
             const result = await tx.matricula.updateMany({ where: { id: { in: waiting.map((item) => item.id) }, status: 'EM_ESPERA' }, data: { status: 'ATIVA' } })
             promoted = result.count
+            for (const item of waiting) await this.linkCourseStudent(tx, turma.curso_id, item.aluno_id)
           }
         }
       }
@@ -147,10 +152,11 @@ export class EnrollmentService {
       if (enrollment.status === 'ATIVA') {
         const active = await tx.matricula.count({ where: { turma_id: turma.id, status: 'ATIVA' } })
         if (turma.capacidade === null || active < turma.capacidade) {
-          const next = await tx.matricula.findFirst({ where: { turma_id: turma.id, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], select: { id: true, aluno: { select: { name: true } } } })
+          const next = await tx.matricula.findFirst({ where: { turma_id: turma.id, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], select: { id: true, aluno_id: true, aluno: { select: { name: true } } } })
           if (next) {
             await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
             promoted = next.aluno.name
+            await this.linkCourseStudent(tx, turma.curso_id, next.aluno_id)
           }
         }
       }
@@ -171,10 +177,11 @@ export class EnrollmentService {
       if (enrollment.status === 'ATIVA') {
         const active = await tx.matricula.count({ where: { turma_id: turma.id, status: 'ATIVA' } })
         if (turma.capacidade === null || active < turma.capacidade) {
-          const next = await tx.matricula.findFirst({ where: { turma_id: turma.id, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], select: { id: true, aluno: { select: { name: true } } } })
+          const next = await tx.matricula.findFirst({ where: { turma_id: turma.id, status: 'EM_ESPERA' }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }], select: { id: true, aluno_id: true, aluno: { select: { name: true } } } })
           if (next) {
             await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
             promoted = next.aluno.name
+            await this.linkCourseStudent(tx, turma.curso_id, next.aluno_id)
           }
         }
       }
@@ -182,15 +189,20 @@ export class EnrollmentService {
     })
   }
 
-  private async enrollLocked(tx: Prisma.TransactionClient, tenantId: string, turma: { id: string; nome: string; capacidade: number | null }, studentId: string, role: string, applicantName: string | null, applicantContact: string | null) {
+  private async enrollLocked(tx: Prisma.TransactionClient, tenantId: string, turma: { id: string; nome: string; capacidade: number | null; curso_id?: string | null }, studentId: string, role: string, applicantName: string | null, applicantContact: string | null) {
     if (turma.capacidade === null) throw new BadRequestException('Defina a capacidade da turma antes de inscrever alunos')
     const existing = await tx.matricula.findUnique({ where: { turma_id_aluno_id: { turma_id: turma.id, aluno_id: studentId } }, select: { id: true } })
     if (existing) throw new ConflictException('Aluno já inscrito nesta turma')
     const active = await tx.matricula.count({ where: { turma_id: turma.id, status: 'ATIVA' } })
     const status = turma.capacidade !== null && active >= turma.capacidade ? 'EM_ESPERA' : 'ATIVA'
     const enrollment = await tx.matricula.create({ data: { tenant_id: tenantId, turma_id: turma.id, aluno_id: studentId, status, solicitante_tipo: role, solicitante_nome: applicantName, solicitante_contato: applicantContact } })
+    if (status === 'ATIVA') await this.linkCourseStudent(tx, turma.curso_id, studentId)
     const position = status === 'EM_ESPERA' ? await tx.matricula.count({ where: { turma_id: turma.id, status: 'EM_ESPERA' } }) : null
     return { id: enrollment.id, turma: turma.nome, status, posicao_espera: position }
+  }
+
+  private async linkCourseStudent(tx: Prisma.TransactionClient, courseId: string | null | undefined, studentId: string) {
+    if (courseId) await tx.curso.update({ where: { id: courseId }, data: { alunos: { connect: { id: studentId } } } })
   }
 
   private async lockClass(tx: Prisma.TransactionClient, tenantId: string, classId: string) {

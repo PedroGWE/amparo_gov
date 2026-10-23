@@ -44,6 +44,12 @@ export class EnrollmentAdminController {
   @Post('courses/:id/classes')
   courseClasses(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string, @Body() dto: BatchClassesDto) { return this.courses.createClasses(tenantId, id, dto) }
 
+  @Get('courses/:id/students')
+  courseStudents(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string) { return this.courses.students(tenantId, id) }
+
+  @Post('courses/:id/students/:studentId')
+  linkCourseStudent(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string, @Param('studentId') studentId: string) { return this.courses.linkStudent(tenantId, id, studentId) }
+
   @Get('classes')
   classes(@CurrentUser('tenantId') tenantId: string) {
     return this.enrollment.adminClasses(tenantId)

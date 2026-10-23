@@ -34,6 +34,7 @@ const BENEFICIARIO_SELECT = {
   termo_consentimento: true,
   autorizacao_uso_imagem: true,
   project: { select: { id: true, name: true } },
+  cursos: { select: { id: true, nome: true, tipo: true }, orderBy: { nome: 'asc' } },
   _count: { select: { responsaveis: true, vinculos_projetos: true } },
   created_at: true,
   updated_at: true,
@@ -51,6 +52,7 @@ export class BeneficiariosService {
       deleted_at: null,
       ...(q.status && { status: q.status }),
       ...(q.turma && { turma: { contains: q.turma, mode: 'insensitive' } }),
+      ...(q.curso_id && { cursos: { some: { id: q.curso_id, tenant_id: tenantId } } }),
       ...(q.project_id && {
         OR: [
           { project_id: q.project_id },
@@ -85,6 +87,7 @@ export class BeneficiariosService {
       where: { id, tenant_id: tenantId, deleted_at: null },
       include: {
         project: { select: { id: true, name: true } },
+        cursos: { where: { tenant_id: tenantId }, select: { id: true, nome: true, tipo: true }, orderBy: { nome: 'asc' } },
         responsaveis: { orderBy: { created_at: 'asc' } },
         documents: {
           where: { tenant_id: tenantId, deleted_at: null },
@@ -249,7 +252,7 @@ export class BeneficiariosService {
       })
       for (const classId of [...new Set(memberships.map((item) => item.turma_id))].sort()) {
         await tx.$queryRaw`SELECT id FROM "turmas" WHERE id = ${classId} AND tenant_id = ${tenantId} FOR UPDATE`
-        const turma = await tx.turma.findFirst({ where: { id: classId, tenant_id: tenantId }, select: { capacidade: true } })
+        const turma = await tx.turma.findFirst({ where: { id: classId, tenant_id: tenantId }, select: { capacidade: true, curso_id: true } })
         const activeMembership = memberships.some((item) => item.turma_id === classId && item.status === 'ATIVA')
         await tx.matricula.updateMany({
           where: { aluno_id: id, turma_id: classId, status: { in: ['ATIVA', 'EM_ESPERA'] } },
@@ -261,9 +264,12 @@ export class BeneficiariosService {
             const next = await tx.matricula.findFirst({
               where: { turma_id: classId, status: 'EM_ESPERA' },
               orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
-              select: { id: true },
+              select: { id: true, aluno_id: true },
             })
-            if (next) await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
+            if (next) {
+              await tx.matricula.update({ where: { id: next.id }, data: { status: 'ATIVA' } })
+              if (turma.curso_id) await tx.curso.update({ where: { id: turma.curso_id }, data: { alunos: { connect: { id: next.aluno_id } } } })
+            }
           }
         }
       }

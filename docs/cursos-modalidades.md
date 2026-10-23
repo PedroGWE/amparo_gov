@@ -21,3 +21,11 @@ O importador atualiza os quatro projetos existentes, preserva os códigos usados
 Os sete antigos cadastros de atividades tornam-se referências históricas dos novos cursos e modalidades, mantendo todos os vínculos anteriores com alunos e professores. A listagem principal de Projetos passa a exibir os financiamentos; os seletores de vínculos históricos de alunos e professores usam `include_legacy=true`. Apenas a turma explicitamente nomeada Pilates recebe essa modalidade automaticamente. As turmas genéricas não recebem modalidade presumida.
 
 O script é repetível, não cria turmas ou capacidades presumidas e verifica que os totais de alunos, documentos e matrículas, os nomes das turmas e suas capacidades foram preservados.
+
+## Alunos de cada atividade
+
+Os beneficiários possuem vínculos diretos com cursos e modalidades, independentemente da matrícula em uma turma. A migração `20261023010000_link_course_students` recupera os vínculos anteriores pelo projeto de atividade original, pelos vínculos ativos de beneficiário/projeto e pelas matrículas ativas em turmas com curso definido. O aluno pode estar em várias atividades e aparece uma única vez em cada lista. Projetos de financiamento compartilhados não determinam a modalidade do aluno.
+
+Cada atividade mostra o total e a lista de **Alunos vinculados**, inclusive alunos ainda sem turma definida. O nome abre o perfil do beneficiário; o perfil e a listagem geral exibem seus cursos e modalidades. O botão **Vincular aluno existente** permite acrescentar um vínculo sem criar outra pessoa ou alterar a ocupação das turmas.
+
+Novas matrículas ativas e promoções da reserva também vinculam o aluno à atividade da turma. Vincular uma turma existente a um curso inclui os alunos já matriculados. Entrar na reserva, por si só, não cria um vínculo de participação ativa. Os vínculos com uma atividade são preservados ao encerrar uma turma, como histórico de participação.

@@ -19,14 +19,39 @@ export class CoursesService {
         emendas: { where: { tenant_id: tenantId }, select: emendaSelect },
         editais: { where: { tenant_id: tenantId }, select: editalSelect },
         turmas: { where: { tenant_id: tenantId, deleted_at: null }, select: { id: true, nome: true, capacidade: true, project_id: true }, orderBy: { nome: 'asc' } },
+        _count: { select: { alunos: { where: { tenant_id: tenantId, deleted_at: null } } } },
       },
     })
     const counts = await this.prisma.matricula.groupBy({ by: ['turma_id', 'status'], where: { tenant_id: tenantId, status: { in: ['ATIVA', 'EM_ESPERA'] }, turma: { deleted_at: null, curso_id: { not: null } } }, _count: { _all: true } })
     const totals = new Map(counts.map(item => [`${item.turma_id}:${item.status}`, item._count._all]))
-    return courses.map(course => ({ ...course, turmas: course.turmas.map(turma => {
+    return courses.map(course => ({ ...course, total_alunos: course._count.alunos, turmas: course.turmas.map(turma => {
       const inscritos = totals.get(`${turma.id}:ATIVA`) ?? 0
       return { ...turma, inscritos, espera: totals.get(`${turma.id}:EM_ESPERA`) ?? 0, vagas: turma.capacidade === null ? null : Math.max(0, turma.capacidade - inscritos) }
     }) }))
+  }
+
+  async students(tenantId: string, courseId: string) {
+    await this.find(tenantId, courseId)
+    return this.prisma.beneficiary.findMany({
+      where: { tenant_id: tenantId, deleted_at: null, cursos: { some: { id: courseId, tenant_id: tenantId } } },
+      select: {
+        id: true, name: true, status: true,
+        matriculas: {
+          where: { tenant_id: tenantId, status: { in: ['ATIVA', 'EM_ESPERA'] }, turma: { curso_id: courseId, tenant_id: tenantId, deleted_at: null } },
+          select: { status: true, turma: { select: { id: true, nome: true } } },
+          orderBy: { created_at: 'asc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    })
+  }
+
+  async linkStudent(tenantId: string, courseId: string, studentId: string) {
+    await this.find(tenantId, courseId)
+    const student = await this.prisma.beneficiary.findFirst({ where: { id: studentId, tenant_id: tenantId, deleted_at: null }, select: { id: true } })
+    if (!student) throw new NotFoundException('Aluno não encontrado')
+    await this.prisma.curso.update({ where: { id: courseId }, data: { alunos: { connect: { id: studentId } } } })
+    return { linked: studentId, curso_id: courseId }
   }
 
   async options(tenantId: string) {

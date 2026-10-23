@@ -1977,6 +1977,7 @@ model Beneficiary {
   vinculos_projetos BeneficiarioProjeto[]
   matriculas        Matricula[]
   documents         Document[]
+  cursos            Curso[] @relation("CursoBeneficiarios")
 
   @@unique([tenant_id, cpf])
   @@index([tenant_id])
@@ -2763,6 +2764,7 @@ model Curso {
   emendas           EmendaParlamentar[] @relation("CursoEmendas")
   editais           Edital[] @relation("CursoEditais")
   turmas            Turma[]
+  alunos            Beneficiary[] @relation("CursoBeneficiarios")
 
   @@unique([tenant_id, nome])
   @@index([tenant_id, ativo])

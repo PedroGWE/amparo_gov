@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GetServerSideProps } from 'next'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -500,6 +500,7 @@ function DetailDrawer({
                 <DetailItem label="Turma" value={beneficiario.turma} />
                 <DetailItem label="Turno" value={beneficiario.turno} />
                 <div className="col-span-2"><DetailItem label="Projeto principal" value={beneficiario.project?.name} /></div>
+                <div className="col-span-2"><DetailItem label="Cursos e modalidades" value={beneficiario.cursos?.map(course => course.nome).join(' · ') || 'Sem atividade identificada'} /></div>
               </div>
             </section>
 
@@ -665,10 +666,13 @@ export default function BeneficiariosPage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
+  const requestedStudent = typeof router.query.aluno === 'string' ? router.query.aluno : null
+  useEffect(() => { if (requestedStudent) setDetailId(requestedStudent) }, [requestedStudent])
 
   const params: Record<string, string | number> = { page, limit: 20 }
   if (search) params.search = search
   if (statusFilter) params.status = statusFilter
+  if (typeof router.query.curso === 'string') params.curso_id = router.query.curso
 
   const { data, isLoading, isValidating, error: loadError, mutate: refreshBeneficiarios } = useSWR(
     ['/beneficiarios', params],
@@ -732,6 +736,7 @@ export default function BeneficiariosPage() {
   return (
     <DashboardLayout>
       <div className="space-y-4">
+        {typeof router.query.curso === 'string' && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-800"><p>Exibindo beneficiários vinculados ao curso ou modalidade selecionado.</p><Link href={`/${router.query.tenant}/beneficiarios`} className="font-medium underline">Ver todos</Link></div>}
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -815,6 +820,7 @@ export default function BeneficiariosPage() {
                     <div className="mt-4 space-y-2.5 text-sm text-gray-600">
                       <p className="flex items-center gap-2"><School className="h-4 w-4 text-gray-400" /><span className="truncate">{b.turma ?? 'Sem turma'}{b.turno ? ` · ${b.turno}` : ''}</span></p>
                       <p className="flex items-center gap-2"><FolderKanban className="h-4 w-4 text-gray-400" /><span className="truncate">{b.project?.name ?? 'Sem projeto principal'}</span></p>
+                      {!!b.cursos?.length && <p className="text-xs font-medium text-brand-700">Cursos e modalidades: {b.cursos.map(course => course.nome).join(' · ')}</p>}
                       <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-gray-400" /><span>{b.telefone ?? 'Contato não informado'}</span></p>
                     </div>
 
