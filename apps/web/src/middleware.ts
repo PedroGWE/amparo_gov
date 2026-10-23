@@ -6,18 +6,16 @@ const PUBLIC_PATHS = ['/login', '/register', '/educa', '/_next', '/favicon', '/a
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isEducaHost = request.headers.get('host')?.split(':')[0] === 'educa.amparogov.org'
-  const educaAssets: Record<string, string> = {
-    '/favicon.ico': '/brand/educa/favicon.ico',
-    '/apple-touch-icon.png': '/brand/educa/apple-touch-icon.png',
-    '/site.webmanifest': '/brand/educa/site.webmanifest',
-  }
-  if (isEducaHost && educaAssets[pathname]) {
-    const assetUrl = request.nextUrl.clone()
-    assetUrl.pathname = educaAssets[pathname]
-    return NextResponse.rewrite(assetUrl)
+  // Next runs behind the HTTPS proxy; redirects must use the public origin.
+  const publicUrl = request.nextUrl.clone()
+  const host = request.headers.get('host')?.split(':')[0]
+  if (host === 'educa.amparogov.org' || host === 'app.amparogov.org') {
+    publicUrl.hostname = host
+    publicUrl.port = ''
+    publicUrl.protocol = 'https:'
   }
   if (isEducaHost && pathname === '/') {
-    const educaUrl = request.nextUrl.clone()
+    const educaUrl = publicUrl
     educaUrl.pathname = '/educa'
     return NextResponse.redirect(educaUrl)
   }
@@ -27,13 +25,14 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/brand/') ||
     pathname.startsWith('/fonts/') ||
     pathname.startsWith('/amparo/') ||
+    pathname === '/logo.png' ||
+    /^\/android-chrome-\d+x\d+\.png$/.test(pathname) ||
     pathname === '/site.webmanifest' ||
     pathname === '/apple-touch-icon.png' ||
     /^\/[^/]+\/inscricao\/?$/.test(pathname)
 
   if (!isPublic && !request.cookies.get('refresh_token')) {
-    // Usa nextUrl para construir o redirect respeitando o protocolo real (HTTPS atrás de proxy)
-    const loginUrl = request.nextUrl.clone()
+    const loginUrl = publicUrl
     loginUrl.pathname = isEducaHost ? '/educa' : '/login'
     return NextResponse.redirect(loginUrl)
   }

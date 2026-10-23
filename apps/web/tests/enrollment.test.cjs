@@ -106,7 +106,7 @@ test('public requests ignore staff tokens and expired session cookies', async ()
 
 test('public registration links are accessible while management pages require a session', () => {
   const { NextRequest } = require('next/server')
-  const { middleware } = load('middleware.ts')
+  const { middleware } = load('src/middleware.ts')
   for (const route of ['/organizacao/inscricao', '/organizacao/inscricao/']) {
     assert.equal(middleware(new NextRequest(`https://app.example.org${route}`)).status, 200)
   }

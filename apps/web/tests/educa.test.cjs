@@ -31,22 +31,27 @@ test('legacy education links preserve their section and class and require a sess
   assert.equal((await redirect(context)).redirect.destination, '/educa')
 })
 
-test('Educa serves its own favicon and sends expired sessions to the education login', () => {
+test('Educa serves its own favicon and sends expired sessions to the education login', async () => {
   const response = kind => url => ({ kind, url: url?.toString() })
-  const { middleware } = load('middleware.ts', { 'next/server': { NextResponse: { rewrite: response('rewrite'), redirect: response('redirect'), next: response('next') } } })
-  function request(host, pathname) {
-    const url = new URL(`https://${host}${pathname}`)
+  const { middleware } = load('src/middleware.ts', { 'next/server': { NextResponse: { rewrite: response('rewrite'), redirect: response('redirect'), next: response('next') } } })
+  function request(host, pathname, internalOrigin = `https://${host}`) {
+    const url = new URL(`${internalOrigin}${pathname}`)
     url.clone = () => new URL(url)
     return { nextUrl: url, headers: { get: () => host }, cookies: { get: () => undefined } }
   }
+  const rewrites = (await require('../next.config.js').rewrites()).beforeFiles
   for (const name of ['favicon.ico', 'apple-touch-icon.png', 'site.webmanifest']) {
     const result = middleware(request('educa.amparogov.org', '/' + name))
-    assert.equal(result.kind, 'rewrite')
-    assert.equal(result.url, `https://educa.amparogov.org/brand/educa/${name}`)
+    assert.equal(result.kind, 'next')
+    const rewrite = rewrites.find(rule => rule.source === '/' + name)
+    assert.equal(rewrite.destination, `/brand/educa/${name}`)
+    assert.deepEqual(rewrite.has, [{ type: 'host', value: 'educa.amparogov.org' }])
   }
   assert.equal(middleware(request('app.amparogov.org', '/favicon.ico')).kind, 'next')
   assert.equal(middleware(request('educa.amparogov.org', '/instituto/professor')).url, 'https://educa.amparogov.org/educa')
   assert.equal(middleware(request('app.amparogov.org', '/instituto/dashboard')).url, 'https://app.amparogov.org/login')
+  assert.equal(middleware(request('educa.amparogov.org', '/', 'http://localhost:3000')).url, 'https://educa.amparogov.org/educa')
+  assert.equal(middleware(request('app.amparogov.org', '/instituto/dashboard', 'http://localhost:3000')).url, 'https://app.amparogov.org/login')
 })
 
 test('student and teacher navigation expose the appropriate workflows', () => {
