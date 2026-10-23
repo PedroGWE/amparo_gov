@@ -4,6 +4,23 @@ import { CoursesService } from './courses.service'
 import { BatchClassesDto, SaveCourseDto } from './dto/course.dto'
 
 describe('CoursesService links and classes', () => {
+  it('loads one workspace and scopes classes and resources to its tenant', async () => {
+    const db = {
+      curso: { findMany: jest.fn().mockResolvedValue([{ id: 'course-1', _count: { alunos: 2 }, turmas: [{ id: 'class-1', capacidade: 10 }], projetos: [], emendas: [], editais: [] }]) },
+      matricula: { groupBy: jest.fn().mockResolvedValue([{ turma_id: 'class-1', status: 'ATIVA', _count: { _all: 3 } }]) },
+    }
+    const course = await new CoursesService(db as never).detail('tenant-1', 'course-1')
+    expect(course.total_alunos).toBe(2)
+    expect(course.turmas[0]).toMatchObject({ inscritos: 3, vagas: 7 })
+    expect(db.curso.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenant_id: 'tenant-1', id: 'course-1' } }))
+    expect(db.matricula.groupBy).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenant_id: 'tenant-1', turma: { deleted_at: null, curso_id: 'course-1' } }) }))
+  })
+
+  it('rejects an unavailable workspace instead of returning another course', async () => {
+    const db = { curso: { findMany: jest.fn().mockResolvedValue([]) }, matricula: { groupBy: jest.fn().mockResolvedValue([]) } }
+    await expect(new CoursesService(db as never).detail('tenant-1', 'foreign-course')).rejects.toThrow('não encontrado')
+  })
+
   function setup() {
     const tx = {
       curso: { findFirst: jest.fn().mockResolvedValue({ id: 'course-1' }), create: jest.fn().mockResolvedValue({ id: 'course-1' }), update: jest.fn() },

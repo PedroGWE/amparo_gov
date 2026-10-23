@@ -2,6 +2,10 @@
 
 A aba **Cursos e modalidades** organiza as atividades separadamente dos projetos de financiamento. Cada curso ou modalidade pode receber vários projetos, emendas e editais. As emendas e os editais dos projetos vinculados aparecem automaticamente; os vínculos adicionais são opcionais.
 
+Ao selecionar uma atividade na listagem, abre-se sua página de gestão em `/{organizacao}/cursos/{id}`, com a mesma organização de navegação dos projetos: **Visão geral**, **Alunos**, **Turmas e vagas**, **Matrículas e reserva**, **Projetos e recursos** e **Dados da atividade**. As abas possuem endereço próprio e continuam selecionadas ao recarregar. Links antigos com `?curso={id}` redirecionam à página correspondente.
+
+Em **Matrículas e reserva**, a gestão mostra somente as turmas da atividade aberta. É possível matricular um aluno existente vinculado à atividade, conferir sua inscrição, encerrar a matrícula ou excluir a inscrição. Se a turma estiver completa, a nova inscrição entra na reserva. A aba geral **Matrículas** continua disponível para consultar todas as turmas da organização.
+
 Em **Criar turmas**, informe o nome, a quantidade de turmas e as vagas por turma. O projeto escolhido deve estar vinculado ao curso. O formulário permite até 50 turmas por operação e 10.000 vagas por turma. A quantidade de turmas efetivamente criadas e suas capacidades permanecem visíveis na página.
 
 O link `/{organizacao}/inscricao?curso={id}` oferece somente as turmas daquele curso. O parâmetro adicional `turma={id}` abre a inscrição de uma turma específica. Os links continuam recebendo inscrições quando as vagas se esgotam: os alunos entram na reserva da turma em ordem de chegada. Encerrar ou excluir uma matrícula ativa, ou ampliar a capacidade, promove os primeiros da reserva automaticamente. A operação usa bloqueio transacional da turma para impedir excesso de vagas em inscrições simultâneas. Diminuir a capacidade preserva os alunos já matriculados.

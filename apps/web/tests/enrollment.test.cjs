@@ -15,7 +15,7 @@ function load(relative, mocks = {}) {
   const module = { exports: {} }
   vm.runInNewContext(code, {
     module, exports: module.exports, process, console,
-    require: (name) => Object.hasOwn(mocks, name) ? mocks[name] : require(name),
+    require: (name) => Object.hasOwn(mocks, name) ? mocks[name] : name.startsWith('@/') ? load(`src/${name.slice(2)}.tsx`, mocks) : require(name),
   }, { filename })
   return module.exports
 }

@@ -11,9 +11,9 @@ const editalSelect = { id: true, titulo: true, descricao: true, valor_total: tru
 export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
-  async list(tenantId: string) {
+  async list(tenantId: string, courseId?: string) {
     const courses = await this.prisma.curso.findMany({
-      where: { tenant_id: tenantId }, orderBy: [{ tipo: 'asc' }, { nome: 'asc' }],
+      where: { tenant_id: tenantId, ...(courseId && { id: courseId }) }, orderBy: [{ tipo: 'asc' }, { nome: 'asc' }],
       include: {
         projetos: { where: { tenant_id: tenantId, deleted_at: null }, select: { ...projectSelect, emendas: { where: { tenant_id: tenantId }, select: emendaSelect }, editais: { where: { tenant_id: tenantId }, select: editalSelect } } },
         emendas: { where: { tenant_id: tenantId }, select: emendaSelect },
@@ -22,12 +22,18 @@ export class CoursesService {
         _count: { select: { alunos: { where: { tenant_id: tenantId, deleted_at: null } } } },
       },
     })
-    const counts = await this.prisma.matricula.groupBy({ by: ['turma_id', 'status'], where: { tenant_id: tenantId, status: { in: ['ATIVA', 'EM_ESPERA'] }, turma: { deleted_at: null, curso_id: { not: null } } }, _count: { _all: true } })
+    const counts = await this.prisma.matricula.groupBy({ by: ['turma_id', 'status'], where: { tenant_id: tenantId, status: { in: ['ATIVA', 'EM_ESPERA'] }, turma: { deleted_at: null, curso_id: courseId ?? { not: null } } }, _count: { _all: true } })
     const totals = new Map(counts.map(item => [`${item.turma_id}:${item.status}`, item._count._all]))
     return courses.map(course => ({ ...course, total_alunos: course._count.alunos, turmas: course.turmas.map(turma => {
       const inscritos = totals.get(`${turma.id}:ATIVA`) ?? 0
       return { ...turma, inscritos, espera: totals.get(`${turma.id}:EM_ESPERA`) ?? 0, vagas: turma.capacidade === null ? null : Math.max(0, turma.capacidade - inscritos) }
     }) }))
+  }
+
+  async detail(tenantId: string, courseId: string) {
+    const [course] = await this.list(tenantId, courseId)
+    if (!course) throw new NotFoundException('Curso ou modalidade não encontrado')
+    return course
   }
 
   async students(tenantId: string, courseId: string) {

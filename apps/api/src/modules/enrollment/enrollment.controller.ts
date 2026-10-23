@@ -35,6 +35,9 @@ export class EnrollmentAdminController {
   @Get('courses/options')
   courseOptions(@CurrentUser('tenantId') tenantId: string) { return this.courses.options(tenantId) }
 
+  @Get('courses/:id')
+  courseDetail(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string) { return this.courses.detail(tenantId, id) }
+
   @Post('courses')
   createCourse(@CurrentUser('tenantId') tenantId: string, @Body() dto: SaveCourseDto) { return this.courses.save(tenantId, dto) }
 
