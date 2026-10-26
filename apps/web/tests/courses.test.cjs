@@ -67,7 +67,7 @@ test('opens the course overview using its own address', () => {
 test('public form requests only the course specified in its link', () => {
   const { html, calls } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'judo' }, { '/enrollment/osc/classes?curso=judo': { data: { organization: 'OSC', course: { id: 'judo', nome: 'Judô' }, classes: [] } } })
   assert.equal(calls[0].key, '/enrollment/osc/classes?curso=judo')
-  assert.match(html, /Matrícula · Judô/)
+  assert.match(html, /Inscreva-se em Judô/)
   assert.equal(calls[0].options.refreshInterval, 15000)
 })
 
@@ -80,14 +80,17 @@ test('each invitation uses the activity image and a saved visual can override au
   for (const [name, image, preset] of [['Jiu-jítsu','jiu-jitsu',null],['Karatê','karate',null],['Judô','judo',null],['Oficina especial','pilates','PILATES']]) {
     const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'activity' }, { '/enrollment/osc/classes?curso=activity': { data: { organization: 'OSC', course: { id: 'activity', nome: name, tema_visual: preset }, classes: [] } } })
     assert.ok(html.includes(`src="/courses/${image}.png"`))
-    assert.ok(html.includes(`Matrícula · ${name}`))
+    assert.ok(html.includes(`Inscreva-se em ${name}`))
   }
 })
 
-test('a teacher invitation clearly identifies registration on behalf of a student', () => {
-  const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'judo', perfil: 'professor' }, { '/enrollment/osc/classes?curso=judo': { data: { organization: 'OSC', course: { id: 'judo', nome: 'Judô' }, classes: [{ id: 'class-a', nome: 'A', vagas: 2 }] } } })
-  assert.match(html, /Professor: preencha a inscrição do aluno nesta atividade/)
-  assert.match(html, /aria-pressed="true"[^>]*>.*?Professor/s)
+test('public enrollment offers only student and responsible adult choices', () => {
+  const { html } = render('src/pages/[tenant]/inscricao.tsx', { curso: 'judo', turma: 'class-a', perfil: 'professor' }, { '/enrollment/osc/classes?curso=judo': { data: { organization: 'OSC', course: { id: 'judo', nome: 'Judô' }, classes: [{ id: 'class-a', nome: 'A', vagas: 2 }] } } })
+  assert.match(html, /Sou responsável/)
+  assert.match(html, /Sou o aluno/)
+  assert.doesNotMatch(html, /Professor|professor/)
+  assert.match(html, /ETAPA 1 DE 3/)
+  assert.match(html, /Turma A selecionada pelo link/)
 })
 
 test('a direct invitation to an unrelated class does not collect student details', () => {
@@ -98,8 +101,9 @@ test('a direct invitation to an unrelated class does not collect student details
 
 test('the invitations workspace provides directed links for the course and its own classes', () => {
   const { html } = render('src/pages/[tenant]/cursos/[courseId].tsx', { aba: 'convites' }, { '/enrollment-admin/courses/judo': { data: course } }, { courseId: 'judo' })
-  for (const role of ['aluno','responsavel','professor']) assert.ok(html.includes(`/osc/inscricao?curso=judo&amp;perfil=${role}`))
-  assert.match(html, /\/osc\/inscricao\?curso=judo&amp;turma=a/)
+  for (const role of ['aluno','responsavel']) assert.ok(html.includes(`/osc/inscricao?curso=judo&amp;perfil=${role}`))
+  assert.doesNotMatch(html, /perfil=professor/)
+  assert.match(html, /\/osc\/inscricao\?curso=judo&amp;turma=a#invite-form/)
   assert.match(html, /Imagem e cores do convite/)
   assert.match(html, /src="\/courses\/judo.png"/)
 })

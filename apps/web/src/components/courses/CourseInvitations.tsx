@@ -71,11 +71,6 @@ export function CourseInvitations({
       title: 'Convite para o responsável',
       description: 'Abre o formulário para mãe, pai ou responsável inscrever o aluno.',
     },
-    {
-      value: 'PROFESSOR',
-      title: 'Convite para o professor',
-      description: 'Abre o formulário para o professor inscrever um aluno nesta atividade.',
-    },
   ]
   return (
     <section

@@ -83,7 +83,7 @@ export const courseVisuals = {
 
 export type CourseVisualKey = keyof typeof courseVisuals
 export type CourseVisual = (typeof courseVisuals)[CourseVisualKey]
-export type InvitationRole = 'ALUNO' | 'RESPONSAVEL' | 'PROFESSOR'
+export type InvitationRole = 'ALUNO' | 'RESPONSAVEL'
 
 export function courseVisualKey(name: string, selected?: string | null): CourseVisualKey {
   if (selected && Object.hasOwn(courseVisuals, selected)) return selected as CourseVisualKey
@@ -113,7 +113,7 @@ export function invitationPath(
   courseId: string,
   options: { classId?: string; role?: InvitationRole } = {},
 ) {
-  return `/${encodeURIComponent(tenant)}/inscricao?curso=${encodeURIComponent(courseId)}${options.classId ? `&turma=${encodeURIComponent(options.classId)}` : ''}${options.role ? `&perfil=${options.role.toLowerCase()}` : ''}`
+  return `/${encodeURIComponent(tenant)}/inscricao?curso=${encodeURIComponent(courseId)}${options.classId ? `&turma=${encodeURIComponent(options.classId)}` : ''}${options.role ? `&perfil=${options.role.toLowerCase()}` : ''}#invite-form`
 }
 
 export function invitationRole(value: unknown): InvitationRole | '' {
@@ -121,7 +121,5 @@ export function invitationRole(value: unknown): InvitationRole | '' {
     ? 'ALUNO'
     : value === 'responsavel'
       ? 'RESPONSAVEL'
-      : value === 'professor'
-        ? 'PROFESSOR'
-        : ''
+      : ''
 }

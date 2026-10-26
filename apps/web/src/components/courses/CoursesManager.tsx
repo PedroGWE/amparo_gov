@@ -24,7 +24,7 @@ import { Modal } from '@/components/ui/Modal'
 import api from '@/lib/api'
 import { CourseStudents } from '@/components/courses/CourseStudents'
 import { CourseInvitations } from './CourseInvitations'
-import { getCourseVisual } from './course-visual'
+import { getCourseVisual, invitationPath } from './course-visual'
 
 type Project = {
   id: string
@@ -164,7 +164,7 @@ export default function CoursesManager({ courseId }: { courseId?: string }) {
     ? unique([...selected.editais, ...selected.projetos.flatMap((p) => p.editais ?? [])])
     : []
   const enrollmentPath =
-    selected && tenant ? `/${tenant}/inscricao?curso=${encodeURIComponent(selected.id)}` : ''
+    selected && tenant ? invitationPath(tenant, selected.id) : ''
 
   function openCourse(course?: Course) {
     setEditingId(course?.id ?? null)
@@ -641,7 +641,7 @@ export default function CoursesManager({ courseId }: { courseId?: string }) {
                       type="button"
                       className="font-medium text-brand-700 hover:underline"
                       onClick={() =>
-                        copyLink(`${enrollmentPath}&turma=${encodeURIComponent(turma.id)}`)
+                        copyLink(invitationPath(tenant, selected.id, { classId: turma.id }))
                       }
                     >
                       Copiar link desta turma

@@ -1128,3 +1128,168 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A inscrição pública mantém a atividade e a turma visíveis, com o formulário como foco. */
+.course-invite {
+  background: #f5f7fa;
+}
+.course-invite .invite-container {
+  width: min(860px, calc(100% - 40px));
+  margin-top: 24px;
+}
+.course-invite .invite-hero {
+  grid-template-columns: minmax(0, 1.45fr) minmax(210px, 0.55fr);
+  border-radius: 18px;
+}
+.course-invite .invite-hero-copy,
+.course-invite .invite-cover {
+  min-height: 215px;
+}
+.course-invite .invite-hero-copy {
+  padding: 28px 34px;
+}
+.course-invite .invite-hero h1 {
+  margin-top: 7px;
+  font-size: clamp(27px, 3vw, 38px);
+}
+.course-invite .invite-hero-copy > p {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.course-invite .invite-hero-copy > .invite-btn {
+  margin-top: 17px;
+}
+.course-invite .invite-facts {
+  justify-content: flex-start;
+  gap: 12px 28px;
+  margin: 13px 0 18px;
+  padding: 13px 20px;
+}
+.course-invite .invite-facts > div {
+  font-size: 12px;
+}
+.course-invite .invite-form-card {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 38px;
+  scroll-margin-top: 18px;
+}
+.course-invite .invite-form-heading {
+  margin-bottom: 20px;
+}
+.course-invite .invite-form-heading h2 {
+  font-size: 25px;
+}
+.course-invite .invite-form-heading p,
+.course-invite .invite-step-heading p {
+  color: #596a7d;
+  font-size: 13px;
+}
+.course-invite .invite-steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+.course-invite .invite-steps small {
+  color: #506174;
+  font-size: 11px;
+}
+.course-invite .invite-roles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.course-invite .invite-roles > button {
+  min-height: 100px;
+  padding: 16px;
+}
+.course-invite .invite-roles > button > strong {
+  font-size: 14px;
+}
+.course-invite .invite-roles > button > small {
+  font-size: 11px;
+}
+.course-invite .invite-field > span,
+.course-invite .invite-choice-label {
+  color: #33465a;
+  font-size: 13px;
+  font-weight: 700;
+}
+.course-invite .invite-field > input,
+.course-invite .invite-field > select {
+  min-height: 50px;
+  font-size: 15px;
+}
+.course-invite .invite-fields {
+  gap: 17px;
+}
+.course-invite .invite-actions .invite-btn {
+  min-width: 180px;
+  min-height: 50px;
+  font-size: 14px;
+}
+.course-invite .invite-small {
+  font-size: 12px;
+}
+.course-invite .invite-form-footer {
+  font-size: 11px;
+}
+@media (max-width: 560px) {
+  .course-invite .invite-container {
+    width: calc(100% - 24px);
+    margin-top: 12px;
+  }
+  .course-invite .invite-hero {
+    display: block;
+    border-radius: 14px;
+  }
+  .course-invite .invite-cover {
+    display: none;
+  }
+  .course-invite .invite-hero-copy {
+    min-height: 0;
+    padding: 20px 22px;
+  }
+  .course-invite .invite-hero h1 {
+    font-size: 26px;
+  }
+  .course-invite .invite-hero-copy > .invite-btn {
+    min-height: 43px;
+    margin-top: 14px;
+  }
+  .course-invite .invite-facts {
+    gap: 8px;
+    margin: 10px 0 12px;
+    padding: 12px 15px;
+  }
+  .course-invite .invite-facts > div,
+  .course-invite .invite-facts > div:last-child {
+    display: flex;
+    width: 100%;
+    font-size: 11px;
+  }
+  .course-invite .invite-form-card {
+    padding: 22px 18px;
+  }
+  .course-invite .invite-form-heading h2 {
+    font-size: 22px;
+  }
+  .course-invite .invite-steps small {
+    font-size: 10px;
+  }
+  .course-invite .invite-roles > button {
+    min-height: 98px;
+    padding: 12px 7px;
+  }
+  .course-invite .invite-roles > button > strong {
+    font-size: 12px;
+  }
+  .course-invite .invite-roles > button > small {
+    font-size: 10px;
+  }
+  .course-invite .invite-field > input,
+  .course-invite .invite-field > select {
+    font-size: 16px;
+  }
+  .course-invite .invite-actions .invite-btn {
+    min-width: 150px;
+  }
+}
