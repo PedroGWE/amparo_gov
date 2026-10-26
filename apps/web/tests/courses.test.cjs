@@ -89,7 +89,9 @@ test('public enrollment offers only student and responsible adult choices', () =
   assert.match(html, /Sou responsável/)
   assert.match(html, /Sou o aluno/)
   assert.doesNotMatch(html, /Professor|professor/)
-  assert.match(html, /ETAPA 1 DE 3/)
+  assert.match(html, /PERGUNTA 1 DE 6/)
+  assert.match(html, /role="progressbar"/)
+  assert.doesNotMatch(html, /Telefone com DDD ou e-mail \*/)
   assert.match(html, /Turma A selecionada pelo link/)
 })
 

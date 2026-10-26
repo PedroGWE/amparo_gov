@@ -4,7 +4,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
 import axios from 'axios'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronRight, GraduationCap, HeartHandshake, LockKeyhole, School, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, GraduationCap, HeartHandshake, LockKeyhole, School, Users } from 'lucide-react'
 import { publicApi } from '@/lib/api'
 import { getCourseVisual, invitationRole, type InvitationRole } from './course-visual'
 import type { InvitationProps, PublicInvitation } from './invitation-types'
@@ -24,7 +24,13 @@ const initialForm: Form = {
   solicitante_tipo: '', solicitante_nome: '', solicitante_contato: '', parentesco: '',
   aluno_nome: '', aluno_nascimento: '', aluno_cpf: '', turma_id: '', consentimento: false,
 }
-const steps = ['Quem está preenchendo', 'Dados do aluno', 'Confirmar']
+type Question = 'role' | 'name' | 'contact' | 'relationship' | 'student' | 'birth' | 'cpf' | 'review'
+
+function questionsFor(role: InvitationRole | ''): Question[] {
+  return role === 'RESPONSAVEL'
+    ? ['role', 'name', 'contact', 'relationship', 'student', 'birth', 'cpf', 'review']
+    : ['role', 'name', 'contact', 'birth', 'cpf', 'review']
+}
 
 function messageFrom(error: unknown) {
   const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined
@@ -50,6 +56,8 @@ export default function CourseInvitation({ initialData, initialCourseId = '', in
   const [started, setStarted] = useState(false)
   const [result, setResult] = useState<{ turma: string; status: 'ATIVA' | 'EM_ESPERA'; posicao_espera: number | null } | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const questions = questionsFor(form.solicitante_tipo)
+  const question = questions[step] ?? 'review'
 
   const visual = getCourseVisual(data?.course?.nome, data?.course?.tema_visual)
   const availableClasses = data?.classes.filter(item => !classId || item.id === classId)
@@ -74,32 +82,28 @@ export default function CourseInvitation({ initialData, initialCourseId = '', in
     setForm(current => ({ ...current, [key]: value }))
     setError('')
   }
+  function chooseRole(role: InvitationRole) {
+    setForm(current => ({ ...current, solicitante_tipo: role, parentesco: role === 'ALUNO' ? '' : current.parentesco, aluno_nome: role === 'ALUNO' ? current.solicitante_nome.trim() : '' }))
+    setError('')
+    setStarted(true)
+    setStep(1)
+  }
   function next() {
-    if (step === 0) {
-      if (!form.solicitante_tipo || form.solicitante_nome.trim().length < 2 || form.solicitante_contato.trim().length < 5 || (form.solicitante_tipo === 'RESPONSAVEL' && !form.parentesco)) {
-        setError('Selecione aluno ou responsável e informe nome, contato e parentesco quando necessário.')
-        return
-      }
-      if (form.solicitante_tipo === 'ALUNO' && !form.aluno_nome) {
-        setForm(current => ({ ...current, aluno_nome: current.solicitante_nome.trim() }))
-      }
-    }
-    if (step === 1 && (
-      form.aluno_nome.trim().length < 2 ||
-      !form.aluno_nascimento ||
-      new Date(form.aluno_nascimento) > new Date() ||
-      (form.aluno_cpf.replace(/\D/g, '').length !== 0 && form.aluno_cpf.replace(/\D/g, '').length !== 11)
-    )) {
-      setError('Confira o nome e o nascimento do aluno. Se informar CPF, use 11 dígitos.')
-      return
-    }
+    if (question === 'role' && !form.solicitante_tipo) { setError('Escolha quem está preenchendo.'); return }
+    if (question === 'name' && form.solicitante_nome.trim().length < 2) { setError('Informe seu nome completo.'); return }
+    if (question === 'contact' && form.solicitante_contato.trim().length < 5) { setError('Informe um telefone com DDD ou e-mail válido.'); return }
+    if (question === 'relationship' && !form.parentesco) { setError('Selecione sua relação com o aluno.'); return }
+    if (question === 'student' && form.aluno_nome.trim().length < 2) { setError('Informe o nome completo do aluno.'); return }
+    if (question === 'birth' && (!form.aluno_nascimento || new Date(form.aluno_nascimento) > new Date())) { setError('Informe uma data de nascimento válida.'); return }
+    if (question === 'cpf' && ![0, 11].includes(form.aluno_cpf.replace(/\D/g, '').length)) { setError('Se informar CPF, use 11 dígitos.'); return }
+    if (question === 'name' && form.solicitante_tipo === 'ALUNO') setForm(current => ({ ...current, aluno_nome: current.solicitante_nome.trim() }))
     setStarted(true)
     setError('')
     setStep(current => current + 1)
   }
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (step < 2) { next(); return }
+    if (question !== 'review') { next(); return }
     if (!selectedClass) { setError('Selecione uma turma para continuar.'); return }
     if (!form.consentimento) { setError('Confirme a autorização para enviar a inscrição.'); return }
     if (!data || loadError) { setError('Esta turma não está disponível no momento. Tente novamente.'); return }
@@ -173,28 +177,26 @@ export default function CourseInvitation({ initialData, initialCourseId = '', in
           : !data ? <p role="status" className="invite-state">Carregando formulário...</p>
           : unavailable ? <div className="invite-state"><School size={32} /><h3>{classId ? 'Esta turma não está disponível neste link' : 'Ainda não há turmas abertas'}</h3><p>Peça à instituição um novo link para inscrição.</p></div>
           : <>
-            <ol className="invite-steps" aria-label="Etapas da inscrição">{steps.map((label, index) => <li key={label} aria-current={index === step ? 'step' : undefined} className={index < step ? 'is-complete' : index === step ? 'is-current' : ''}><span>{index < step ? <Check size={14} /> : index + 1}</span><small>{label}</small></li>)}</ol>
+            <div className="invite-progress" aria-label={`Pergunta ${step + 1} de ${questions.length}`}>
+              <span>{String(step + 1).padStart(2, '0')} <span>/ {String(questions.length).padStart(2, '0')}</span></span>
+              <div role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={questions.length} aria-label="Progresso da inscrição"><span style={{ width: `${((step + 1) / questions.length) * 100}%` }} /></div>
+            </div>
             <form onSubmit={submit} noValidate>
-              <div className="invite-step-heading"><span>ETAPA {step + 1} DE 3</span><h3 ref={heading} tabIndex={-1}>{step === 0 ? 'Quem vai preencher?' : step === 1 ? 'Dados do aluno' : 'Confira e envie'}</h3><p>{step === 0 ? 'Escolha uma opção e informe um contato.' : step === 1 ? 'Use os dados como aparecem no documento do aluno.' : 'Revise os dados antes de enviar.'}</p></div>
+              <div className="invite-step-heading"><span>PERGUNTA {step + 1} DE {questions.length}</span><h3 ref={heading} tabIndex={-1}>{({ role: 'Quem está preenchendo?', name: 'Como você se chama?', contact: 'Como podemos falar com você?', relationship: 'Qual é sua relação com o aluno?', student: 'Qual é o nome do aluno?', birth: 'Quando o aluno nasceu?', cpf: 'O aluno tem CPF?', review: 'Tudo certo para enviar?' } as Record<Question, string>)[question]}</h3><p>{({ role: 'Escolha a opção que combina com você.', name: 'Digite seu nome completo.', contact: 'A instituição usará esse contato sobre a inscrição.', relationship: 'Selecione uma opção.', student: 'Use o nome como aparece no documento.', birth: 'Informe a data de nascimento.', cpf: 'Esse dado é opcional. Você pode seguir sem preenchê-lo.', review: 'Confira os dados e autorize o envio.' } as Record<Question, string>)[question]}</p></div>
               {error && <p role="alert" className="invite-error">{error}</p>}
-              {step === 0 && <div className="invite-fields">
+              {question === 'role' && <div className="invite-fields">
                 <div className="invite-roles">{([
                   { value: 'RESPONSAVEL', label: 'Sou responsável', detail: 'Vou inscrever um aluno', icon: HeartHandshake },
                   { value: 'ALUNO', label: 'Sou o aluno', detail: 'Vou me inscrever', icon: GraduationCap },
-                ] as const).map(({ value, label, detail, icon: Icon }) => <button key={value} type="button" aria-pressed={form.solicitante_tipo === value} onClick={() => update('solicitante_tipo', value)}><Icon size={23} /><strong>{label}</strong><small>{detail}</small>{form.solicitante_tipo === value && <CheckCircle2 className="invite-role-check" size={17} />}</button>)}</div>
-                <label className="invite-field"><span>Seu nome completo *</span><input value={form.solicitante_nome} onChange={event => update('solicitante_nome', event.target.value)} autoComplete="name" aria-required maxLength={200} placeholder="Digite seu nome completo" /></label>
-                <label className="invite-field"><span>Telefone com DDD ou e-mail *</span><input value={form.solicitante_contato} onChange={event => update('solicitante_contato', event.target.value)} autoComplete="tel" aria-required maxLength={120} placeholder="Para receber contato da instituição" /></label>
-                {form.solicitante_tipo === 'RESPONSAVEL' && <label className="invite-field"><span>Relação com o aluno *</span><select value={form.parentesco} onChange={event => update('parentesco', event.target.value)} aria-required><option value="">Selecione</option>{[['MAE','Mãe'],['PAI','Pai'],['AVO','Avô ou avó'],['TIO','Tio ou tia'],['TUTOR_LEGAL','Tutor legal'],['OUTRO','Outro']].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+                ] as const).map(({ value, label, detail, icon: Icon }) => <button key={value} type="button" aria-pressed={form.solicitante_tipo === value} onClick={() => chooseRole(value)}><Icon size={26} /><strong>{label}</strong><small>{detail}</small><ArrowRight className="invite-role-arrow" size={19} /></button>)}</div>
               </div>}
-              {step === 1 && <div className="invite-fields">
-                <label className="invite-field"><span>Nome completo do aluno *</span><input value={form.aluno_nome} onChange={event => update('aluno_nome', event.target.value)} autoComplete="off" aria-required maxLength={200} placeholder="Como aparece no documento" /></label>
-                <div className="invite-field-grid">
-                  <label className="invite-field"><span>Data de nascimento *</span><input type="date" max={new Date().toISOString().slice(0, 10)} value={form.aluno_nascimento} onChange={event => update('aluno_nascimento', event.target.value)} aria-required /></label>
-                  <label className="invite-field"><span>CPF do aluno (opcional)</span><input inputMode="numeric" value={form.aluno_cpf} onChange={event => update('aluno_cpf', event.target.value)} placeholder="11 dígitos, se tiver" maxLength={14} /></label>
-                </div>
-                <p className="invite-small">O aluno pode se inscrever mesmo sem CPF.</p>
-              </div>}
-              {step === 2 && <div className="invite-fields">
+              {question === 'name' && <label className="invite-field invite-answer"><span>Seu nome completo *</span><input value={form.solicitante_nome} onChange={event => update('solicitante_nome', event.target.value)} autoComplete="name" aria-required maxLength={200} placeholder="Digite seu nome completo" /></label>}
+              {question === 'contact' && <label className="invite-field invite-answer"><span>Telefone com DDD ou e-mail *</span><input value={form.solicitante_contato} onChange={event => update('solicitante_contato', event.target.value)} autoComplete="tel" aria-required maxLength={120} placeholder="(00) 00000-0000 ou email@exemplo.com" /></label>}
+              {question === 'relationship' && <div className="invite-choice-list">{([['MAE','Mãe'],['PAI','Pai'],['AVO','Avô ou avó'],['TIO','Tio ou tia'],['TUTOR_LEGAL','Tutor legal'],['OUTRO','Outro']] as const).map(([value, label], index) => <button key={value} type="button" aria-pressed={form.parentesco === value} onClick={() => { update('parentesco', value); setStep(current => current + 1) }}><span>{String.fromCharCode(65 + index)}</span>{label}<ArrowRight size={18} /></button>)}</div>}
+              {question === 'student' && <label className="invite-field invite-answer"><span>Nome completo do aluno *</span><input value={form.aluno_nome} onChange={event => update('aluno_nome', event.target.value)} autoComplete="off" aria-required maxLength={200} placeholder="Como aparece no documento" /></label>}
+              {question === 'birth' && <label className="invite-field invite-answer"><span>Data de nascimento *</span><input type="date" max={new Date().toISOString().slice(0, 10)} value={form.aluno_nascimento} onChange={event => update('aluno_nascimento', event.target.value)} aria-required /></label>}
+              {question === 'cpf' && <div><label className="invite-field invite-answer"><span>CPF do aluno (opcional)</span><input inputMode="numeric" value={form.aluno_cpf} onChange={event => update('aluno_cpf', event.target.value)} placeholder="11 dígitos, se tiver" maxLength={14} /></label><p className="invite-small">O aluno pode se inscrever mesmo sem CPF.</p></div>}
+              {question === 'review' && <div className="invite-fields">
                 {availableClasses && availableClasses.length > 1 ? <div className="invite-class-options"><p className="invite-choice-label">Escolha a turma *</p>{availableClasses.map(item => <button type="button" key={item.id} aria-pressed={form.turma_id === item.id} onClick={() => update('turma_id', item.id)}><span className="invite-class-radio">{form.turma_id === item.id && <span />}</span><span><strong>{item.nome}</strong>{!data.course && item.curso?.nome && <small>{item.curso.nome}</small>}<span className={`invite-class-status${!item.vagas ? ' is-waiting' : ''}`}>{item.vagas ? `${item.vagas} ${item.vagas === 1 ? 'vaga disponível' : 'vagas disponíveis'}` : 'Lista de reserva'}</span></span><ChevronRight size={17} /></button>)}</div> : null}
                 <dl className="invite-review"><div><dt>Aluno</dt><dd>{form.aluno_nome}</dd></div><div><dt>Atividade</dt><dd>{data.course?.nome ?? selectedClass?.curso?.nome ?? 'Inscrição'}</dd></div><div><dt>Turma</dt><dd>{selectedClass?.nome ?? 'Selecione acima'}</dd></div><div><dt>Contato</dt><dd>{form.solicitante_contato}</dd></div></dl>
                 <p className="invite-small">{selectedClass?.vagas ? 'A confirmação da vaga será mostrada após o envio.' : 'Esta turma está completa. A inscrição entrará na lista de reserva.'}</p>
@@ -202,7 +204,7 @@ export default function CourseInvitation({ initialData, initialCourseId = '', in
               </div>}
               <div className="invite-actions">
                 {step > 0 ? <button type="button" className="invite-back" disabled={sending} onClick={() => { setStarted(true); setStep(current => current - 1); setError('') }}><ArrowLeft size={16} />Voltar</button> : <span />}
-                <button type="submit" disabled={sending} className="invite-btn invite-btn-primary">{sending ? 'Enviando...' : step < 2 ? 'Continuar' : 'Enviar inscrição'}{!sending && <ArrowRight size={17} />}</button>
+                {question !== 'role' && question !== 'relationship' && <button type="submit" disabled={sending} className="invite-btn invite-btn-primary">{sending ? 'Enviando...' : question === 'review' ? 'Enviar inscrição' : question === 'cpf' && !form.aluno_cpf ? 'Pular e continuar' : 'Continuar'}{!sending && <ArrowRight size={17} />}</button>}
               </div>
               <p className="invite-form-footer"><LockKeyhole size={13} />Seus dados são enviados à instituição responsável pela atividade.</p>
             </form>
