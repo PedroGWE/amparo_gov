@@ -180,8 +180,13 @@ export class EnrollmentService {
       (dto.solicitante_tipo === 'ALUNO' && birthDate <= adultCutoff)
     const tenant = await this.activeTenant(slug)
     const cpf = dto.aluno_cpf?.replace(/\D/g, '') || null
+    const rg = dto.aluno_rg?.trim() || null
+    if (!cpf && !rg)
+      throw new BadRequestException('Informe o RG ou CPF do aluno')
     if (cpf && cpf.length !== 11)
       throw new BadRequestException('CPF do aluno deve conter 11 dígitos')
+    if (rg && rg.replace(/[^\p{L}\p{N}]/gu, '').length < 4)
+      throw new BadRequestException('RG do aluno deve conter pelo menos 4 caracteres')
     try {
       return await this.prisma.$transaction(async (tx) => {
         const turma = await this.lockClass(tx, tenant.id, dto.turma_id)
@@ -189,39 +194,28 @@ export class EnrollmentService {
           throw new BadRequestException('A turma não pertence ao curso ou modalidade deste link')
         if (turma.curso && (!turma.curso.ativo || !turma.curso.inscricoes_abertas))
           throw new BadRequestException('As inscrições deste curso ou modalidade estão encerradas')
-        if (cpf) {
-          const existing = await tx.beneficiary.findUnique({
-            where: { tenant_id_cpf: { tenant_id: tenant.id, cpf } },
-            select: { id: true, name: true, birth_date: true, deleted_at: true },
-          })
-          if (existing) {
-            const normalizeName = (value: string) =>
-              value
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .trim()
-                .replace(/\s+/g, ' ')
-                .toLocaleLowerCase('pt-BR')
-            if (
-              existing.deleted_at ||
-              normalizeName(existing.name) !== normalizeName(dto.aluno_nome) ||
-              existing.birth_date?.toISOString().slice(0, 10) !==
-                birthDate.toISOString().slice(0, 10)
-            ) {
-              throw new ConflictException(
-                'Já existe um cadastro para este aluno. Procure a organização para conferir os dados e realizar a matrícula.',
-              )
-            }
-            return this.enrollLocked(
-              tx,
-              tenant.id,
-              turma,
-              existing.id,
-              dto.solicitante_tipo,
-              dto.solicitante_nome,
-              dto.solicitante_contato,
-            )
-          }
+        const matches = cpf
+          ? [await tx.beneficiary.findUnique({
+              where: { tenant_id_cpf: { tenant_id: tenant.id, cpf } },
+              select: { id: true, name: true, birth_date: true, deleted_at: true },
+            })].filter((item) => item !== null)
+          : await tx.beneficiary.findMany({
+              where: { tenant_id: tenant.id, rg_certidao: { equals: rg!, mode: 'insensitive' } },
+              select: { id: true, name: true, birth_date: true, deleted_at: true },
+              take: 2,
+            })
+        if (matches.length > 1)
+          throw new ConflictException('Há mais de um cadastro com este RG. Procure a organização para conferir os dados.')
+        const existing = matches[0]
+        if (existing) {
+          const normalizeName = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR')
+          if (
+            existing.deleted_at ||
+            normalizeName(existing.name) !== normalizeName(dto.aluno_nome) ||
+            existing.birth_date?.toISOString().slice(0, 10) !== birthDate.toISOString().slice(0, 10)
+          )
+            throw new ConflictException('Já existe um cadastro para este aluno. Procure a organização para conferir os dados e realizar a matrícula.')
+          return this.enrollLocked(tx, tenant.id, turma, existing.id, dto.solicitante_tipo, dto.solicitante_nome, dto.solicitante_contato)
         }
         const sameEnrollment = await tx.beneficiary.findFirst({
           where: {
@@ -242,6 +236,7 @@ export class EnrollmentService {
             name: dto.aluno_nome.trim(),
             birth_date: birthDate,
             cpf,
+            rg_certidao: rg,
             telefone: dto.aluno_telefone?.trim() || null,
             email: dto.aluno_email?.trim() || null,
             termo_consentimento: hasPersonalConsent,

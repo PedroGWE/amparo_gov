@@ -1493,6 +1493,29 @@
 .course-invite .invite-answer > input::placeholder {
   color: #aab7c0;
 }
+.course-invite .invite-document {
+  display: grid;
+  gap: 24px;
+}
+.course-invite .invite-document-options {
+  display: flex;
+  gap: 10px;
+}
+.course-invite .invite-document-options > button {
+  min-width: 96px;
+  min-height: 45px;
+  border: 2px solid #dfe8ed;
+  border-radius: 10px;
+  background: #fbfcfd;
+  color: #38516a;
+  font-size: 14px;
+  font-weight: 750;
+}
+.course-invite .invite-document-options > button[aria-pressed='true'] {
+  border-color: var(--invite-accent);
+  background: var(--invite-pale);
+  color: var(--invite-accent);
+}
 .course-invite .invite-answer + .invite-small {
   margin-top: 10px;
 }

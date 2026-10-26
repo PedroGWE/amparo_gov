@@ -8,7 +8,7 @@ describe('EnrollmentService course registration', () => {
       $queryRaw: jest.fn().mockResolvedValue([]),
       turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class-1', nome: 'Judô A', capacidade: 1, curso_id: 'course-1', project_id: 'project-1', curso: { ativo: true, inscricoes_abertas: true } }), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 'class-1', curso_id: 'course-1' }) },
       curso: { update: jest.fn().mockResolvedValue({ id: 'course-1' }) },
-      beneficiary: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'new-student' }) },
+      beneficiary: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'new-student' }) },
       matricula: { findUnique: jest.fn().mockResolvedValue(null), count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: 'enrollment-1' }), findMany: jest.fn().mockResolvedValue([{ id: 'first-waiting', aluno_id: 'waiting-student' }]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     }
     const prisma = { ...tx, tenant: { findUnique: jest.fn().mockResolvedValue({ id: 'tenant-1', name: 'OSC', status: 'ACTIVE', deleted_at: null }) }, curso: { findFirst: jest.fn().mockResolvedValue({ id: 'course-1', nome: 'Judô' }) }, $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)) }
@@ -48,6 +48,27 @@ describe('EnrollmentService course registration', () => {
     tx.turma.findFirst.mockResolvedValue({ id: 'class-1', capacidade: 1, curso_id: 'course-1', curso: { ativo: true, inscricoes_abertas: false } })
     await expect(service.apply('osc', dto)).rejects.toThrow('encerradas')
     expect(tx.beneficiary.create).not.toHaveBeenCalled()
+  })
+
+  it('requires RG or CPF before creating an enrollment', async () => {
+    const { tx, service } = setup()
+    await expect(service.apply('osc', { ...dto, aluno_cpf: '', aluno_rg: ' ' })).rejects.toThrow('Informe o RG ou CPF')
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+  })
+
+  it('accepts RG without CPF and saves it on the student profile', async () => {
+    const { tx, service } = setup()
+    tx.matricula.count.mockResolvedValue(0)
+    await expect(service.apply('osc', { ...dto, aluno_cpf: undefined, aluno_rg: ' 12.345.678-9 ' })).resolves.toMatchObject({ status: 'ATIVA' })
+    expect(tx.beneficiary.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ cpf: null, rg_certidao: '12.345.678-9' }) }))
+  })
+
+  it('reuses an existing student with the same RG and matching identity', async () => {
+    const { tx, service } = setup()
+    tx.beneficiary.findMany.mockResolvedValue([{ id: 'existing-student', name: 'Jose Silva', birth_date: new Date('2000-01-01'), deleted_at: null }])
+    await service.apply('osc', { ...dto, aluno_cpf: undefined, aluno_rg: '12.345.678-9' })
+    expect(tx.beneficiary.create).not.toHaveBeenCalled()
+    expect(tx.matricula.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ aluno_id: 'existing-student' }) }))
   })
 
   it('puts an existing student in another course on the reserve without duplicating their profile', async () => {

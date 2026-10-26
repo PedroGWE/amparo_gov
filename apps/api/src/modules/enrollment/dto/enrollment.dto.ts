@@ -20,6 +20,7 @@ export class ApplyEnrollmentDto {
   @IsString() @MinLength(2) @MaxLength(200) aluno_nome: string
   @IsDateString() aluno_nascimento: string
   @IsOptional() @IsString() @MaxLength(20) aluno_cpf?: string
+  @IsOptional() @IsString() @MaxLength(30) aluno_rg?: string
   @IsOptional() @IsString() @MaxLength(30) aluno_telefone?: string
   @IsOptional() @IsEmail() aluno_email?: string
   @IsIn(['RESPONSAVEL', 'PROFESSOR', 'ALUNO']) solicitante_tipo: 'RESPONSAVEL' | 'PROFESSOR' | 'ALUNO'
