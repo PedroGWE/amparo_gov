@@ -1,0 +1,44 @@
+{
+  "method": "Initial official HTTPS GET via curl, no authentication; only metadata preserved",
+  "observations": [
+    {
+      "name": "salic_documentation",
+      "url": "https://api.salic.cultura.gov.br/docs",
+      "http_status": 200,
+      "observed_at": "2026-10-29T12:56:52.646Z",
+      "bytes": 185271,
+      "sha256": "32d8ad29eddfd974c12c1da59a5bfbaa456526cbd7fcefbd2524f64ba081e4e3"
+    },
+    {
+      "name": "salic_validation",
+      "url": "https://api.salic.cultura.gov.br/api/v1/projetos?limit=1&offset=0&ano_captacao=26",
+      "http_status": 422,
+      "observed_at": "2026-10-29T12:58:59.133Z",
+      "bytes": 135,
+      "sha256": "b533567183643f051219d7f85798c28afe694286223f800ac188ba8f9c011940",
+      "root_fields": [
+        "message",
+        "errors"
+      ],
+      "validation_fields": [
+        "ano_captacao"
+      ]
+    },
+    {
+      "name": "salic_aggregate",
+      "url": "https://api.salic.cultura.gov.br/api/v1/projetos?limit=2&offset=0&ano_captacao=2026",
+      "http_status": 200,
+      "observed_at": "2026-10-29T13:01:14.844Z",
+      "bytes": 162556,
+      "sha256": "773aa3532e2d35c6d070978262e5e59aa33ef9fa126d02825cbd6a500157997c",
+      "root_fields": [
+        "ano_captacao",
+        "valor_total_captado",
+        "quantidade_projetos",
+        "pronac"
+      ],
+      "shape": "AGGREGATE_NOT_PAGINATED_PROJECTS",
+      "count": 16329
+    }
+  ]
+}

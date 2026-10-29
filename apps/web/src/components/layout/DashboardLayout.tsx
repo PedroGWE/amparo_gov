@@ -35,6 +35,7 @@ const navItems = [
   { label: 'Projetos', icon: FolderKanban, href: 'projetos' },
   { label: 'Cursos e modalidades', icon: GraduationCap, href: 'cursos' },
   { label: 'Editais', icon: Megaphone, href: 'editais' },
+  { label: 'Oportunidades e recursos', icon: Landmark, href: 'recursos' },
   { label: 'Beneficiários', icon: Users, href: 'beneficiarios' },
   { label: 'Matrículas', icon: ClipboardList, href: 'matriculas' },
   { label: 'Professores', icon: GraduationCap, href: 'professores' },

@@ -106,6 +106,7 @@ pnpm db:studio     # Abre o Prisma Studio
 - [Operação, backup e restauração](docs/OPERATIONS.md)
 - [Matriz funcional](docs/FUNCTIONAL_MATRIX.md)
 - [Registro de validação](docs/VALIDATION.md)
+- [Oportunidades e recursos para projetos sociais](docs/social-resources.md)
 
 ## Licença
 

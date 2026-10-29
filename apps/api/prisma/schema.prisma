@@ -12,6 +12,176 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Public catalog is shared; manual records and profiles belong to one tenant.
+model ResourceSource {
+  id String @id
+  name String
+  official_url String
+  documentation_url String
+  mode String
+  validation Json @default("{}")
+  connector ResourceConnector?
+  records ResourceRecord[]
+  @@map("resource_sources")
+}
+
+model ResourceConnector {
+  id String @id
+  source_id String @unique
+  enabled Boolean @default(false)
+  interval_hours Int @default(24)
+  page_size Int @default(100)
+  max_pages Int @default(10)
+  cursor Int @default(0)
+  status String @default("READY")
+  next_sync_at DateTime? @db.Timestamptz(3)
+  last_success_at DateTime? @db.Timestamptz(3)
+  last_attempt_at DateTime? @db.Timestamptz(3)
+  lease_until DateTime? @db.Timestamptz(3)
+  last_error String?
+  source ResourceSource @relation(fields: [source_id], references: [id])
+  runs ResourceSyncRun[]
+  @@map("resource_connectors")
+}
+
+model ResourceOrganization {
+  id String @id @default(cuid())
+  tenant_id String @unique
+  name String
+  applicant_type String?
+  legal_nature String?
+  uf String?
+  city String?
+  founded_on String?
+  themes String[] @default([])
+  territorial_scope String?
+  updated_at DateTime @updatedAt
+  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  @@map("resource_organizations")
+}
+
+model ResourceRecord {
+  id String @id @default(cuid())
+  scope String @default("PUBLIC")
+  tenant_id String?
+  source_id String
+  external_id String
+  source_url String
+  application_url String?
+  kind String
+  origin String
+  title String?
+  description String?
+  theme String?
+  territories String[] @default([])
+  eligible_profiles String[] @default([])
+  eligibility_text String?
+  support_type String?
+  funder_name String?
+  amounts Json @default("[]")
+  dates Json @default("[]")
+  documents Json @default("[]")
+  starts_on String?
+  ends_on String?
+  timezone String?
+  official_status String?
+  availability_evidence Boolean @default(false)
+  restricted Boolean @default(false)
+  calculated_status String @default("INFORMACOES_INSUFICIENTES")
+  source_updated_at String?
+  collected_at DateTime @default(now()) @db.Timestamptz(3)
+  last_success_at DateTime @default(now()) @db.Timestamptz(3)
+  raw_data Json @default("{}")
+  source ResourceSource @relation(fields: [source_id], references: [id])
+  tenant Tenant? @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  requirements ResourceRequirement[]
+  project ResourceFundedProject?
+  funders ResourceFundingEvidence[]
+  favorites ResourceFavorite[]
+  @@unique([scope, source_id, external_id, kind])
+  @@index([tenant_id, kind])
+  @@index([kind, availability_evidence, ends_on])
+  @@index([source_id, last_success_at])
+  @@map("resource_records")
+}
+
+model ResourceRequirement {
+  id String @id @default(cuid())
+  record_id String
+  field String
+  operator String
+  value Json
+  evidence String
+  record ResourceRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  @@index([record_id])
+  @@map("resource_requirements")
+}
+
+model ResourceFundedProject {
+  id String @id @default(cuid())
+  record_id String @unique
+  proponent_name String?
+  approved_amount String?
+  raised_amount String?
+  contracted_amount String?
+  disbursed_amount String?
+  record ResourceRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  @@map("resource_funded_projects")
+}
+
+model ResourceFunder {
+  id String @id @default(cuid())
+  source_id String
+  external_id String
+  name String
+  source_url String
+  evidence ResourceFundingEvidence[]
+  @@unique([source_id, external_id])
+  @@map("resource_funders")
+}
+
+model ResourceFundingEvidence {
+  record_id String
+  funder_id String
+  meaning String
+  amount String?
+  record ResourceRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  funder ResourceFunder @relation(fields: [funder_id], references: [id])
+  @@id([record_id, funder_id])
+  @@map("resource_funding_evidence")
+}
+
+model ResourceFavorite {
+  id String @id @default(cuid())
+  tenant_id String
+  user_id String
+  record_id String
+  stage String @default("IDENTIFICADA")
+  notes String?
+  updated_at DateTime @updatedAt
+  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  record ResourceRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  @@unique([tenant_id, user_id, record_id])
+  @@map("resource_favorites")
+}
+
+model ResourceSyncRun {
+  id String @id @default(cuid())
+  connector_id String
+  status String @default("RUNNING")
+  started_at DateTime @default(now()) @db.Timestamptz(3)
+  finished_at DateTime? @db.Timestamptz(3)
+  processed Int @default(0)
+  pages Int @default(0)
+  cursor_start Int @default(0)
+  cursor_end Int @default(0)
+  error String?
+  connector ResourceConnector @relation(fields: [connector_id], references: [id])
+  @@index([connector_id, started_at])
+  @@map("resource_sync_runs")
+}
+
 // ============================================================
 // ENUMS
 // ============================================================
@@ -629,6 +799,9 @@ model Tenant {
   transferegov_records         TransferegovRecord[]
   transferegov_sync_runs       TransferegovSyncRun[]
   transferegov_changes         TransferegovChange[]
+  resource_profile            ResourceOrganization?
+  resource_records            ResourceRecord[]
+  resource_favorites          ResourceFavorite[]
 
   @@index([slug])
   @@index([cnpj])
@@ -638,6 +811,7 @@ model Tenant {
 }
 
 model User {
+  resource_favorites ResourceFavorite[]
   student_code String?
   beneficiary Beneficiary? @relation("StudentAccount")
   professor_profile Professor? @relation("TeacherAccount")

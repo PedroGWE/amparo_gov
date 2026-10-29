@@ -1,0 +1,2032 @@
+{
+  "validated_at": "2026-10-29T14:51:07.822Z",
+  "method": "Official HTTPS GET via curl; no cookies or authentication",
+  "results": [
+    {
+      "name": "transferegov_portal",
+      "url": "https://api-publica.transferegov.gestao.gov.br/",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 1699368,
+      "sha256": "e63c343239b9732de302dcbd3acd8d9843ef006e92e4515c68986e12101ca230"
+    },
+    {
+      "name": "discricionarias_spec",
+      "url": "https://api-publica.transferegov.gestao.gov.br/discricionarias/openapi.json",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 122228,
+      "sha256": "269f37a85ae00c45823b596e2acd179c251a5d1b3e3730391fab233b59054106",
+      "root_fields": [
+        "openapi",
+        "info",
+        "servers",
+        "paths",
+        "components",
+        "tags"
+      ],
+      "security": null,
+      "paths": [
+        "/todos-programas",
+        "/perguntas-respostas-selecao-pac",
+        "/apoiadores-emendas-programas",
+        "/data-atualizacao",
+        "/propostas",
+        "/proponentes",
+        "/consorcios",
+        "/propostas-canceladas",
+        "/plano-aplicado-detalhado",
+        "/meta-crono-fisico",
+        "/justificativas-proposta",
+        "/propostas-selecao-pac",
+        "/proposta-formalizacao-pac"
+      ],
+      "program_parameters": [
+        {
+          "name": "id_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identificador do Programa",
+            "title": "Id Programa"
+          }
+        },
+        {
+          "name": "cod_orgao_sup_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Código do Órgão superior do Programa",
+            "title": "Cod Orgao Sup Programa"
+          }
+        },
+        {
+          "name": "desc_orgao_sup_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do Órgão superior do Programa",
+            "title": "Desc Orgao Sup Programa"
+          }
+        },
+        {
+          "name": "orgao_executor",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do Órgão Executor do Programa",
+            "title": "Orgao Executor"
+          }
+        },
+        {
+          "name": "cod_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chave que identifica o programa",
+            "title": "Cod Programa"
+          }
+        },
+        {
+          "name": "ano_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ano de criação do Programa",
+            "title": "Ano Programa"
+          }
+        },
+        {
+          "name": "nome_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição do Programa de Governo",
+            "title": "Nome Programa"
+          }
+        },
+        {
+          "name": "acao_orcamentaria",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ação orçamentária vinculada ao Programa",
+            "title": "Acao Orcamentaria"
+          }
+        },
+        {
+          "name": "sit_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "CADASTRADO",
+                  "DISPONIBILIZADO",
+                  "INATIVO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Situação atual do Programa",
+            "title": "Sit Programa"
+          }
+        },
+        {
+          "name": "data_disponibilizacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de disponibilização do Programa (formato: YYYY-MM-DD)",
+            "title": "Data Disponibilizacao"
+          }
+        },
+        {
+          "name": "ano_disponibilizacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ano de disponibilização do Programa",
+            "title": "Ano Disponibilizacao"
+          }
+        },
+        {
+          "name": "dt_prog_ini_receb_prop",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início do recebimento de propostas voluntárias (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Ini Receb Prop"
+          }
+        },
+        {
+          "name": "dt_prog_fim_receb_prop",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim do recebimento de propostas voluntárias (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Fim Receb Prop"
+          }
+        },
+        {
+          "name": "expiracao_prog_prop_voluntaria",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "EXPIRACAO_PROG_DISTANTE",
+                  "EXPIRACAO_PROG_MUITO_PROX",
+                  "EXPIRACAO_PROG_PROX",
+                  "PROG_EXPIRADO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Prazo de expiração do programa de propostas voluntárias",
+            "title": "Expiracao Prog Prop Voluntaria"
+          }
+        },
+        {
+          "name": "dt_prog_ini_emenda_par",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início do recebimento de emendas parlamentares (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Ini Emenda Par"
+          }
+        },
+        {
+          "name": "dt_prog_fim_emenda_par",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim do recebimento de emendas parlamentares (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Fim Emenda Par"
+          }
+        },
+        {
+          "name": "expiracao_prog_emenda_par",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "EXPIRACAO_PROG_DISTANTE",
+                  "EXPIRACAO_PROG_MUITO_PROX",
+                  "EXPIRACAO_PROG_PROX",
+                  "PROG_EXPIRADO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Prazo de expiração do programa de emendas parlamentares",
+            "title": "Expiracao Prog Emenda Par"
+          }
+        },
+        {
+          "name": "dt_prog_ini_benef_esp",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início do recebimento de benefícios especiais (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Ini Benef Esp"
+          }
+        },
+        {
+          "name": "dt_prog_fim_benef_esp",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim do recebimento de benefícios especiais (formato: YYYY-MM-DD)",
+            "title": "Dt Prog Fim Benef Esp"
+          }
+        },
+        {
+          "name": "expiracao_prog_benef_esp",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "EXPIRACAO_PROG_DISTANTE",
+                  "EXPIRACAO_PROG_MUITO_PROX",
+                  "EXPIRACAO_PROG_PROX",
+                  "PROG_EXPIRADO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Prazo de expiração do programa de benefícios especiais",
+            "title": "Expiracao Prog Benef Esp"
+          }
+        },
+        {
+          "name": "descricao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição detalhada do Programa",
+            "title": "Descricao"
+          }
+        },
+        {
+          "name": "observacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observações sobre o Programa",
+            "title": "Observacao"
+          }
+        },
+        {
+          "name": "criterios_de_selecao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Critérios de seleção do Programa",
+            "title": "Criterios De Selecao"
+          }
+        },
+        {
+          "name": "data_publicacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de publicação do Programa (formato: YYYY-MM-DD)",
+            "title": "Data Publicacao"
+          }
+        },
+        {
+          "name": "chamamento_projeto",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NÃO",
+                  "SIM"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indicador de chamamento de projeto",
+            "title": "Chamamento Projeto"
+          }
+        },
+        {
+          "name": "emenda",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "0",
+                  "1"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indicador de emenda parlamentar",
+            "title": "Emenda"
+          }
+        },
+        {
+          "name": "modalidade_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Modalidade do Programa",
+            "title": "Modalidade Programa"
+          }
+        },
+        {
+          "name": "natureza_juridica_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Natureza jurídica do Programa",
+            "title": "Natureza Juridica Programa"
+          }
+        },
+        {
+          "name": "uf_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "AC",
+                  "AL",
+                  "AM",
+                  "AP",
+                  "BA",
+                  "CE",
+                  "DF",
+                  "ES",
+                  "GO",
+                  "MA",
+                  "MG",
+                  "MS",
+                  "MT",
+                  "PA",
+                  "PB",
+                  "PE",
+                  "PI",
+                  "PR",
+                  "RJ",
+                  "RN",
+                  "RO",
+                  "RR",
+                  "RS",
+                  "SC",
+                  "SE",
+                  "SP",
+                  "TO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UF de abrangência do Programa",
+            "title": "Uf Programa"
+          }
+        },
+        {
+          "name": "qualificacao_proposta",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qualificação exigida para propostas",
+            "title": "Qualificacao Proposta"
+          }
+        },
+        {
+          "name": "id_subtipo_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ID do subtipo do Programa",
+            "title": "Id Subtipo Programa"
+          }
+        },
+        {
+          "name": "modalidade_subtipo_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "1",
+                  "9",
+                  "11"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Modalidade do subtipo do Programa",
+            "title": "Modalidade Subtipo Programa"
+          }
+        },
+        {
+          "name": "nome_subtipo_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do subtipo do Programa",
+            "title": "Nome Subtipo Programa"
+          }
+        },
+        {
+          "name": "descricao_subtipo_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição do subtipo do Programa",
+            "title": "Descricao Subtipo Programa"
+          }
+        },
+        {
+          "name": "ind_projeto_estruturante_calamidade_temp",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NÃO",
+                  "SIM"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indicador de projeto estruturante de calamidade temporária",
+            "title": "Ind Projeto Estruturante Calamidade Temp"
+          }
+        },
+        {
+          "name": "modalidade_programa_agrupada",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Modalidade do Programa agrupada",
+            "title": "Modalidade Programa Agrupada"
+          }
+        },
+        {
+          "name": "pagina",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Número da Página",
+            "default": 1,
+            "title": "Pagina"
+          }
+        },
+        {
+          "name": "tamanho_da_pagina",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "maximum": 200,
+            "minimum": 1,
+            "description": "Tamanho da Página",
+            "default": 50,
+            "title": "Tamanho Da Pagina"
+          }
+        }
+      ],
+      "program_fields": [
+        "id_programa",
+        "cod_orgao_sup_programa",
+        "desc_orgao_sup_programa",
+        "orgao_executor",
+        "cod_programa",
+        "ano_programa",
+        "nome_programa",
+        "acao_orcamentaria",
+        "sit_programa",
+        "data_disponibilizacao",
+        "ano_disponibilizacao",
+        "dt_prog_ini_receb_prop",
+        "dt_prog_fim_receb_prop",
+        "expiracao_prog_prop_voluntaria",
+        "dt_prog_ini_emenda_par",
+        "dt_prog_fim_emenda_par",
+        "expiracao_prog_emenda_par",
+        "dt_prog_ini_benef_esp",
+        "dt_prog_fim_benef_esp",
+        "expiracao_prog_benef_esp",
+        "descricao",
+        "observacao",
+        "criterios_de_selecao",
+        "data_publicacao",
+        "chamamento_projeto",
+        "emenda",
+        "modalidade_programa",
+        "natureza_juridica_programa",
+        "uf_programa",
+        "qualificacao_proposta",
+        "id_subtipo_programa",
+        "modalidade_subtipo_programa",
+        "nome_subtipo_programa",
+        "descricao_subtipo_programa",
+        "ind_projeto_estruturante_calamidade_temp",
+        "modalidade_programa_agrupada",
+        "programas_propostas"
+      ]
+    },
+    {
+      "name": "parcerias_spec",
+      "url": "https://api-publica.transferegov.gestao.gov.br/parcerias/openapi.json",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 154747,
+      "sha256": "b91d29099b6d17e36e88cb13067373ba763b8ec704aaa6e5a97a6b37901119a2",
+      "root_fields": [
+        "openapi",
+        "info",
+        "servers",
+        "paths",
+        "components",
+        "tags"
+      ],
+      "security": null,
+      "paths": [
+        "/programa",
+        "/proposta",
+        "/meta-proposta",
+        "/item-proposta",
+        "/cronograma-desembolso",
+        "/parceria",
+        "/parceria-conta",
+        "/data-atualizacao",
+        "/analise-proposta",
+        "/proposta-resultado-indicador",
+        "/distribuicao-recurso-proposta",
+        "/empenho-parceria",
+        "/documento-habil",
+        "/ordem-pagamento",
+        "/extrato-bancario",
+        "/beneficiario_emenda_parlamentar",
+        "/opp",
+        "/indicacao-beneficiario-emenda-parlamentar"
+      ],
+      "program_parameters": [
+        {
+          "name": "id_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identificador do programa.",
+            "title": "Id Programa"
+          }
+        },
+        {
+          "name": "ano_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3000,
+                "exclusiveMinimum": 1900
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ano de referência do programa (1900–2100).",
+            "title": "Ano Programa"
+          }
+        },
+        {
+          "name": "cd_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Código identificador do programa.",
+            "title": "Cd Programa"
+          }
+        },
+        {
+          "name": "tp_instrumento",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tipo de instrumento do programa.",
+            "title": "Tp Instrumento"
+          }
+        },
+        {
+          "name": "cd_tipo_instrumento",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "MMA MULTA",
+                  "FAF",
+                  "FAF SAUDE",
+                  "RENUNCIA MMA",
+                  "RENUNCIA SAUDE",
+                  "FUNDO ESPECIFICO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Código do tipo de instrumento.",
+            "title": "Cd Tipo Instrumento"
+          }
+        },
+        {
+          "name": "sg_ente_superior",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sigla do ente superior.",
+            "title": "Sg Ente Superior"
+          }
+        },
+        {
+          "name": "nm_ente_superior",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do ente superior.",
+            "title": "Nm Ente Superior"
+          }
+        },
+        {
+          "name": "sg_nome_ente_superior",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sigla/Nome estendido do ente superior.",
+            "title": "Sg Nome Ente Superior"
+          }
+        },
+        {
+          "name": "sg_ente_repassador",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sigla do ente repassador.",
+            "title": "Sg Ente Repassador"
+          }
+        },
+        {
+          "name": "nm_ente_repassador",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do ente repassador.",
+            "title": "Nm Ente Repassador"
+          }
+        },
+        {
+          "name": "sg_nome_ente_repassador",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sigla/Nome do ente repassador.",
+            "title": "Sg Nome Ente Repassador"
+          }
+        },
+        {
+          "name": "nm_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do programa.",
+            "title": "Nm Programa"
+          }
+        },
+        {
+          "name": "qualificacao_beneficiario",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Beneficiário de Emenda Parlamentar",
+                  "Beneficiário Espontâneo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qualificação do beneficiário.",
+            "title": "Qualificacao Beneficiario"
+          }
+        },
+        {
+          "name": "ds_objetivo",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição do objetivo do programa.",
+            "title": "Ds Objetivo"
+          }
+        },
+        {
+          "name": "ds_problema",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição do problema/endereço pelo programa.",
+            "title": "Ds Problema"
+          }
+        },
+        {
+          "name": "ds_publico_alvo",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição do público-alvo.",
+            "title": "Ds Publico Alvo"
+          }
+        },
+        {
+          "name": "ds_resultado_esperado",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição dos resultados esperados.",
+            "title": "Ds Resultado Esperado"
+          }
+        },
+        {
+          "name": "dt_inicio_beneficiario_espontaneo",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início para beneficiário espontâneo (YYYY-MM-DD).",
+            "title": "Dt Inicio Beneficiario Espontaneo"
+          }
+        },
+        {
+          "name": "dt_fim_beneficiario_espontaneo",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim para beneficiário espontâneo (YYYY-MM-DD).",
+            "title": "Dt Fim Beneficiario Espontaneo"
+          }
+        },
+        {
+          "name": "expiracao_prog_beneficiario_espotaneo",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "",
+                  "expiracao_prog_distante",
+                  "prog_expirado"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Regra/expiração para beneficiário espontâneo.",
+            "title": "Expiracao Prog Beneficiario Espotaneo"
+          }
+        },
+        {
+          "name": "pc_meia_entrada",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Percentual de meia-entrada.",
+            "title": "Pc Meia Entrada"
+          }
+        },
+        {
+          "name": "situacao_programa",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Em Elaboração",
+                  "Inativo",
+                  "Disponibilizado"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Situação do programa.",
+            "title": "Situacao Programa"
+          }
+        },
+        {
+          "name": "sn_tem_meta_padrao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se o programa possui meta padrão.",
+            "title": "Sn Tem Meta Padrao"
+          }
+        },
+        {
+          "name": "sn_permite_meta_proponente",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se o proponente pode definir metas.",
+            "title": "Sn Permite Meta Proponente"
+          }
+        },
+        {
+          "name": "sn_tem_visao_produto",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se há visão por produto.",
+            "title": "Sn Tem Visao Produto"
+          }
+        },
+        {
+          "name": "sn_exige_plano_distribuicao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se exige plano de distribuição.",
+            "title": "Sn Exige Plano Distribuicao"
+          }
+        },
+        {
+          "name": "sn_dispensa_plano_trabalho",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se dispensa plano de trabalho.",
+            "title": "Sn Dispensa Plano Trabalho"
+          }
+        },
+        {
+          "name": "dt_inicio_beneficiario_especifico",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início para beneficiário específico (YYYY-MM-DD).",
+            "title": "Dt Inicio Beneficiario Especifico"
+          }
+        },
+        {
+          "name": "dt_fim_beneficiario_especifico",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim para beneficiário específico (YYYY-MM-DD).",
+            "title": "Dt Fim Beneficiario Especifico"
+          }
+        },
+        {
+          "name": "expiracao_prog_beneficiario_especifico",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Regra/expiração para beneficiário específico.",
+            "title": "Expiracao Prog Beneficiario Especifico"
+          }
+        },
+        {
+          "name": "sn_vinc_indicadores_resultados_esperados",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se há vínculo com indicadores de resultados esperados.",
+            "title": "Sn Vinc Indicadores Resultados Esperados"
+          }
+        },
+        {
+          "name": "sn_sazonalidade_plano_trabalho",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se há sazonalidade no plano de trabalho.",
+            "title": "Sn Sazonalidade Plano Trabalho"
+          }
+        },
+        {
+          "name": "sn_existe_publico_alvo_padrao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se existe público-alvo padrão.",
+            "title": "Sn Existe Publico Alvo Padrao"
+          }
+        },
+        {
+          "name": "sn_utiliza_cauc_na_habilitacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se utiliza CAUC na habilitação.",
+            "title": "Sn Utiliza Cauc Na Habilitacao"
+          }
+        },
+        {
+          "name": "nr_vlr_global",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Valor global do programa (não negativo).",
+            "title": "Nr Vlr Global"
+          }
+        },
+        {
+          "name": "sn_permite_anexo_tipo_outros",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se permite anexos do tipo 'outros'.",
+            "title": "Sn Permite Anexo Tipo Outros"
+          }
+        },
+        {
+          "name": "dt_inicio_beneficiario_emenda",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de início para beneficiário por emenda (YYYY-MM-DD).",
+            "title": "Dt Inicio Beneficiario Emenda"
+          }
+        },
+        {
+          "name": "dt_fim_beneficiario_emenda",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data de fim para beneficiário por emenda (YYYY-MM-DD).",
+            "title": "Dt Fim Beneficiario Emenda"
+          }
+        },
+        {
+          "name": "expiracao_prog_beneficiario_emenda",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Regra/expiração para beneficiário por emenda.",
+            "title": "Expiracao Prog Beneficiario Emenda"
+          }
+        },
+        {
+          "name": "nr_prazo_captacao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Prazo de captação.",
+            "title": "Nr Prazo Captacao"
+          }
+        },
+        {
+          "name": "sn_todos_cnaes",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indica se abrange todos os CNAEs.",
+            "title": "Sn Todos Cnaes"
+          }
+        },
+        {
+          "name": "in_finalidade",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Indicador de finalidade.",
+            "title": "In Finalidade"
+          }
+        },
+        {
+          "name": "uf_habilitada_nm_uf",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome da UF habilitada vinculada ao programa.",
+            "title": "Uf Habilitada Nm Uf"
+          }
+        },
+        {
+          "name": "uf_habilitada_sg_uf",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "enum": [
+                  "AC",
+                  "AL",
+                  "AM",
+                  "AP",
+                  "BA",
+                  "CE",
+                  "DF",
+                  "ES",
+                  "GO",
+                  "MA",
+                  "MG",
+                  "MS",
+                  "MT",
+                  "PA",
+                  "PB",
+                  "PE",
+                  "PI",
+                  "PR",
+                  "RJ",
+                  "RN",
+                  "RO",
+                  "RR",
+                  "RS",
+                  "SC",
+                  "SE",
+                  "SP",
+                  "TO"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sigla da UF habilitada vinculada ao programa.",
+            "title": "Uf Habilitada Sg Uf"
+          }
+        },
+        {
+          "name": "uf_habilitada_cd_ibge",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Código IBGE da UF habilitada vinculada ao programa.",
+            "title": "Uf Habilitada Cd Ibge"
+          }
+        },
+        {
+          "name": "atende_a_tp_atende_a",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tipo de atendimento vinculado ao programa.",
+            "title": "Atende A Tp Atende A"
+          }
+        },
+        {
+          "name": "categoria_despesa_programa_categoria",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Categoria de despesa vinculada ao programa.",
+            "title": "Categoria Despesa Programa Categoria"
+          }
+        },
+        {
+          "name": "categoria_despesa_programa_subcategoria",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Subcategoria de despesa vinculada ao programa.",
+            "title": "Categoria Despesa Programa Subcategoria"
+          }
+        },
+        {
+          "name": "resultado_esperado_programa_descricao",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descrição de resultado esperado vinculado ao programa.",
+            "title": "Resultado Esperado Programa Descricao"
+          }
+        },
+        {
+          "name": "indicador_programa_nome",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nome do indicador vinculado ao programa.",
+            "title": "Indicador Programa Nome"
+          }
+        },
+        {
+          "name": "indicador_programa_unidade_medida",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unidade de medida do indicador vinculado ao programa.",
+            "title": "Indicador Programa Unidade Medida"
+          }
+        },
+        {
+          "name": "indicador_programa_valor",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Valor do indicador vinculado ao programa.",
+            "title": "Indicador Programa Valor"
+          }
+        },
+        {
+          "name": "pagina",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Número da Página",
+            "default": 1,
+            "title": "Pagina"
+          }
+        },
+        {
+          "name": "tamanho_da_pagina",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "maximum": 200,
+            "minimum": 1,
+            "description": "Tamanho da Página",
+            "default": 50,
+            "title": "Tamanho Da Pagina"
+          }
+        }
+      ],
+      "program_fields": [
+        "id_programa",
+        "ano_programa",
+        "cd_programa",
+        "tp_instrumento",
+        "cd_tipo_instrumento",
+        "sg_ente_superior",
+        "nm_ente_superior",
+        "sg_nome_ente_superior",
+        "sg_ente_repassador",
+        "nm_ente_repassador",
+        "sg_nome_ente_repassador",
+        "nm_programa",
+        "qualificacao_beneficiario",
+        "ds_objetivo",
+        "ds_problema",
+        "ds_publico_alvo",
+        "ds_resultado_esperado",
+        "dt_inicio_beneficiario_espontaneo",
+        "dt_fim_beneficiario_espontaneo",
+        "expiracao_prog_beneficiario_espotaneo",
+        "pc_meia_entrada",
+        "situacao_programa",
+        "sn_tem_meta_padrao",
+        "sn_permite_meta_proponente",
+        "sn_tem_visao_produto",
+        "sn_exige_plano_distribuicao",
+        "sn_dispensa_plano_trabalho",
+        "dt_inicio_beneficiario_especifico",
+        "dt_fim_beneficiario_especifico",
+        "expiracao_prog_beneficiario_especifico",
+        "sn_vinc_indicadores_resultados_esperados",
+        "sn_sazonalidade_plano_trabalho",
+        "sn_existe_publico_alvo_padrao",
+        "sn_utiliza_cauc_na_habilitacao",
+        "nr_vlr_global",
+        "sn_permite_anexo_tipo_outros",
+        "dt_inicio_beneficiario_emenda",
+        "dt_fim_beneficiario_emenda",
+        "expiracao_prog_beneficiario_emenda",
+        "nr_prazo_captacao",
+        "sn_todos_cnaes",
+        "in_finalidade",
+        "vincula_resultados_esperados_indicadores_progama",
+        "sn_projeto_estruturante_calamidade",
+        "modalidade_projeto",
+        "ds_justificativa_tipo_projeto",
+        "ufs_habilitadas",
+        "programa_atende_a",
+        "categorias_despesa",
+        "resultados_esperados",
+        "indicadores_programa"
+      ]
+    },
+    {
+      "name": "discricionarias_programs",
+      "url": "https://api-publica.transferegov.gestao.gov.br/discricionarias/todos-programas?pagina=1&tamanho_da_pagina=2&ano_programa=2026",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 5350,
+      "sha256": "f6a3e3801827f69169a2e9f9f831da19bb7785adf3a9750d4be6d270bbdf1416",
+      "root_fields": [
+        "data",
+        "total_pages",
+        "total_items",
+        "page_number",
+        "page_size"
+      ],
+      "rows": 2,
+      "total_pages": 16329,
+      "total_items": 32658,
+      "record_fields": [
+        "id_programa",
+        "cod_orgao_sup_programa",
+        "desc_orgao_sup_programa",
+        "orgao_executor",
+        "cod_programa",
+        "ano_programa",
+        "nome_programa",
+        "acao_orcamentaria",
+        "sit_programa",
+        "data_disponibilizacao",
+        "ano_disponibilizacao",
+        "dt_prog_ini_receb_prop",
+        "dt_prog_fim_receb_prop",
+        "expiracao_prog_prop_voluntaria",
+        "dt_prog_ini_emenda_par",
+        "dt_prog_fim_emenda_par",
+        "expiracao_prog_emenda_par",
+        "dt_prog_ini_benef_esp",
+        "dt_prog_fim_benef_esp",
+        "expiracao_prog_benef_esp",
+        "descricao",
+        "observacao",
+        "criterios_de_selecao",
+        "data_publicacao",
+        "chamamento_projeto",
+        "emenda",
+        "modalidade_programa",
+        "natureza_juridica_programa",
+        "uf_programa",
+        "qualificacao_proposta",
+        "id_subtipo_programa",
+        "modalidade_subtipo_programa",
+        "nome_subtipo_programa",
+        "descricao_subtipo_programa",
+        "ind_projeto_estruturante_calamidade_temp",
+        "modalidade_programa_agrupada",
+        "programas_propostas"
+      ]
+    },
+    {
+      "name": "parcerias_programs",
+      "url": "https://api-publica.transferegov.gestao.gov.br/parcerias/programa?pagina=1&tamanho_da_pagina=2&ano_programa=2026",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 5034,
+      "sha256": "a174e8eea704062d49c8dee6f450a1d9fa78900d656a9f4783f6f1b7a257f7cf",
+      "root_fields": [
+        "data",
+        "total_pages",
+        "total_items",
+        "page_number",
+        "page_size"
+      ],
+      "rows": 2,
+      "total_pages": 39,
+      "total_items": 77,
+      "record_fields": [
+        "id_programa",
+        "ano_programa",
+        "cd_programa",
+        "tp_instrumento",
+        "cd_tipo_instrumento",
+        "sg_ente_superior",
+        "nm_ente_superior",
+        "sg_nome_ente_superior",
+        "sg_ente_repassador",
+        "nm_ente_repassador",
+        "sg_nome_ente_repassador",
+        "nm_programa",
+        "qualificacao_beneficiario",
+        "ds_objetivo",
+        "ds_problema",
+        "ds_publico_alvo",
+        "ds_resultado_esperado",
+        "dt_inicio_beneficiario_espontaneo",
+        "dt_fim_beneficiario_espontaneo",
+        "expiracao_prog_beneficiario_espotaneo",
+        "pc_meia_entrada",
+        "situacao_programa",
+        "sn_tem_meta_padrao",
+        "sn_permite_meta_proponente",
+        "sn_tem_visao_produto",
+        "sn_exige_plano_distribuicao",
+        "sn_dispensa_plano_trabalho",
+        "dt_inicio_beneficiario_especifico",
+        "dt_fim_beneficiario_especifico",
+        "expiracao_prog_beneficiario_especifico",
+        "sn_vinc_indicadores_resultados_esperados",
+        "sn_sazonalidade_plano_trabalho",
+        "sn_existe_publico_alvo_padrao",
+        "sn_utiliza_cauc_na_habilitacao",
+        "nr_vlr_global",
+        "sn_permite_anexo_tipo_outros",
+        "dt_inicio_beneficiario_emenda",
+        "dt_fim_beneficiario_emenda",
+        "expiracao_prog_beneficiario_emenda",
+        "nr_prazo_captacao",
+        "sn_todos_cnaes",
+        "in_finalidade",
+        "vincula_resultados_esperados_indicadores_progama",
+        "sn_projeto_estruturante_calamidade",
+        "modalidade_projeto",
+        "ds_justificativa_tipo_projeto",
+        "ufs_habilitadas",
+        "programa_atende_a",
+        "categorias_despesa",
+        "resultados_esperados",
+        "indicadores_programa"
+      ]
+    },
+    {
+      "name": "bndes_catalog",
+      "url": "https://dadosabertos.bndes.gov.br/api/3/action/package_show?id=operacoes-financiamento",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 12063,
+      "sha256": "75c34e620afcf367e4e9f379707a640dce2eb34a41661d169b3bfab4c0424d5b",
+      "root_fields": [
+        "help",
+        "success",
+        "result"
+      ],
+      "license": "odc-odbl",
+      "resources": [
+        {
+          "id": "e713bb2d-427c-43a3-b2a9-9e29ea6e57bf",
+          "name": "Dicionário de dados de operações indiretas automáticas",
+          "datastore_active": false,
+          "format": "PDF"
+        },
+        {
+          "id": "9dcdee83-de84-4547-946b-bff5335428db",
+          "name": "Dicionário de dados de operações não automáticas",
+          "datastore_active": false,
+          "format": "PDF"
+        },
+        {
+          "id": "612faa0b-b6be-4b2c-9317-da5dc2c0b901",
+          "name": "Operações indiretas automáticas",
+          "datastore_active": true,
+          "format": "CSV"
+        },
+        {
+          "id": "6f56b78c-510f-44b6-8274-78a5b7e931f4",
+          "name": "Operações não automáticas",
+          "datastore_active": true,
+          "format": "CSV"
+        }
+      ],
+      "metadata_modified": "2026-10-24T07:36:09.940034"
+    },
+    {
+      "name": "bndes_operations",
+      "url": "https://dadosabertos.bndes.gov.br/api/3/action/datastore_search?resource_id=6f56b78c-510f-44b6-8274-78a5b7e931f4&limit=2&offset=0&sort=numero_do_contrato%20asc",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 5239,
+      "sha256": "dccf6812028b90ea09fe2426b79727c5fcfcf5ef656b4ab8240a9663af925d10",
+      "root_fields": [
+        "help",
+        "success",
+        "result"
+      ],
+      "rows": 2,
+      "total": 23896,
+      "record_fields": [
+        "_id",
+        "cliente",
+        "cnpj",
+        "descricao_do_projeto",
+        "uf",
+        "municipio",
+        "municipio_codigo",
+        "numero_do_contrato",
+        "data_da_contratacao",
+        "valor_contratado_reais",
+        "valor_desembolsado_reais",
+        "fonte_de_recurso_desembolsos",
+        "custo_financeiro",
+        "juros",
+        "prazo_carencia_meses",
+        "prazo_amortizacao_meses",
+        "modalidade_de_apoio",
+        "forma_de_apoio",
+        "produto",
+        "instrumento_financeiro",
+        "inovacao",
+        "area_operacional",
+        "setor_cnae",
+        "subsetor_cnae_agrupado",
+        "subsetor_cnae_codigo",
+        "subsetor_cnae_nome",
+        "setor_bndes",
+        "subsetor_bndes",
+        "porte_do_cliente",
+        "natureza_do_cliente",
+        "instituicao_financeira_credenciada",
+        "cnpj_da_instituicao_financeira_credenciada",
+        "tipo_de_garantia",
+        "tipo_de_excepcionalidade",
+        "situacao_do_contrato"
+      ]
+    },
+    {
+      "name": "salic_docs",
+      "url": "https://api.salic.cultura.gov.br/docs",
+      "http_status": 503,
+      "transport_ok": true,
+      "bytes": 190,
+      "sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554"
+    },
+    {
+      "name": "salic_projects",
+      "url": "https://api.salic.cultura.gov.br/api/v1/projetos?limit=2&offset=0",
+      "http_status": 503,
+      "transport_ok": true,
+      "bytes": 190,
+      "sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554"
+    },
+    {
+      "name": "salic_annual_aggregate",
+      "url": "https://api.salic.cultura.gov.br/api/v1/projetos?limit=2&offset=0&ano_captacao=2026",
+      "http_status": 503,
+      "transport_ok": true,
+      "bytes": 190,
+      "sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554"
+    },
+    {
+      "name": "salic_funders",
+      "url": "https://api.salic.cultura.gov.br/api/v1/incentivadores?limit=2&offset=0",
+      "http_status": 503,
+      "transport_ok": true,
+      "bytes": 190,
+      "sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554"
+    },
+    {
+      "name": "prosas_docs",
+      "url": "https://developer.prosas.com.br/docs/restapi/prosas-api-rest/",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 18428,
+      "sha256": "be1a7060772d6624e3c370e6d4ca9f6acc57220f966a993bea71d4e348a3dd81"
+    },
+    {
+      "name": "prosas_processes_docs",
+      "url": "https://developer.prosas.com.br/docs/restapi/listar-processos-disponiveis/",
+      "http_status": 200,
+      "transport_ok": true,
+      "bytes": 15120,
+      "sha256": "791111c49c623fbc9923837fef5bef8d83b90ba93f76eb5e8caab4f5fe2d146b"
+    }
+  ]
+}

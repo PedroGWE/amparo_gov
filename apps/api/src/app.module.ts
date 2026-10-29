@@ -24,6 +24,7 @@ import { RolesGuard } from './common/guards/roles.guard'
 import { PublicDataModule } from './modules/public-data/public-data.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
 import { EnrollmentModule } from './modules/enrollment/enrollment.module'
+import { ResourcesModule } from './modules/resources/resources.module'
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module'
     PublicDataModule,
     InventoryModule,
     EnrollmentModule,
+    ResourcesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
