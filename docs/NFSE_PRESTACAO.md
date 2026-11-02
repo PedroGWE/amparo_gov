@@ -1,5 +1,7 @@
 # Prestação de contas e NFS-e de serviços
 
+> Atualização: a consolidação fiscal legada considera transações em situação `PAGO` no período. Despesas somente aprovadas não são apresentadas como desembolsos. A preparação mensal por instrumento está descrita em `docs/PRESTACAO_MENSAL.md` e não altera a emissão fiscal existente.
+
 ## O que foi integrado
 
 A prestação consolida receitas e despesas aprovadas/pagas no período, pode ser filtrada por projeto e preserva documentos e glosas de itens durante o recálculo. As notas de fornecedores já vinculadas às despesas aparecem na tabela. O CSV inclui número, chave e situação da NFS-e associada a cada receita, além das notas de fornecedores. Uma prestação com notas fiscais abertas ou sem XML arquivado não pode passar de revisão interna para `SUBMETIDO`.

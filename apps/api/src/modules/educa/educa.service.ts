@@ -402,7 +402,7 @@ export class EducaService {
         where: { id, versao: dto.versao, chamada_enviada_at: null },
         data: {
           versao: { increment: 1 },
-          ...(send ? { chamada_enviada_at: new Date(), enviada_por: u.sub } : {}),
+          ...(send ? { chamada_enviada_at: new Date(), enviada_por: u.sub, execution_status: 'REALIZADA' } : {}),
         },
       })
       if (!claimed.count) throw new ConflictException('A chamada mudou. Atualize a página.')

@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
+import MonthlyWorkspace from '@/components/accountability/MonthlyWorkspace'
 
 type NoteStatus = 'RASCUNHO' | 'ENVIANDO' | 'PROCESSANDO' | 'CONSULTA_PENDENTE' | 'AUTORIZADA' | 'REJEITADA' | 'CANCELANDO' | 'CANCELADA'
 type Note = { id: string; transaction_id: string; status: NoteStatus; environment: string; amount: string; customer_name: string; number?: string; access_key?: string; provider_message?: string; cancellation_reason?: string; cancelled_at?: string; xml_storage_key?: string; pdf_storage_key?: string }
@@ -113,6 +114,7 @@ export default function AccountabilityPage() {
 
   return <DashboardLayout><div className="space-y-6 pb-12">
     <header><h1 className="text-2xl font-semibold text-gray-900">Prestação de contas</h1><p className="text-sm text-gray-500">Receitas, despesas e NFS-e vinculadas por projeto e período.</p></header>
+    <MonthlyWorkspace />
     <section className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><strong>Emissão fiscal de serviços</strong><p className="mt-1">{config?.configured ? `Emissor ${config.issuer_cnpj} · ${config.environment === 'PRODUCAO' ? 'produção' : 'homologação sem valor fiscal'} · atualizações ${config.webhook_configured ? 'automáticas' : 'por consulta'}` : config?.message ?? 'Verificando configuração fiscal...'}</p><p className="mt-1 text-xs">Notas de fornecedores continuam no financeiro. Confirme códigos tributários e retenções com a contabilidade antes de enviar.</p></section>
     <form onSubmit={create} className="rounded-xl border bg-white p-5 space-y-3"><h2 className="font-semibold">Nova prestação</h2><div className="grid gap-3 md:grid-cols-3">
       <input required minLength={3} className="input" aria-label="Título" placeholder="Título da prestação" value={title} onChange={(e) => setTitle(e.target.value)} />

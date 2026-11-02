@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { AccountabilityReportStatus, Prisma, TransactionType } from '@prisma/client'
 import type { CreateAccountabilityDto } from './dto/accountability.dto'
+import { csvCell } from './monthly-rules'
 import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
@@ -56,8 +57,9 @@ export class AccountabilityService {
     endExclusive.setUTCDate(endExclusive.getUTCDate() + 1)
     const transactions = await this.prisma.transaction.findMany({
       where: {
-        tenant_id: tenantId, status: { in: ['APROVADO', 'PAGO'] },
-        date: { gte: report.period_start, lt: endExclusive },
+        tenant_id: tenantId, status: 'PAGO',
+        OR: [{ paid_at: { gte: report.period_start, lt: endExclusive } },
+          { paid_at: null, date: { gte: report.period_start, lt: endExclusive } }],
         ...(report.project_id && { project_id: report.project_id }),
       },
       select: { id: true, type: true, description: true, amount: true, category: true },
@@ -109,7 +111,7 @@ export class AccountabilityService {
 
   async csv(tenantId: string, id: string) {
     const report = await this.findOne(tenantId, id)
-    const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`
+    const escape = csvCell
     const fiscalByTransaction = new Map(report.fiscal_notes.map((note) => [note.transaction_id, note]))
     return [
       ['Transação', 'Data', 'Tipo', 'Descrição', 'Categoria', 'Valor', 'Situação', 'NFS-e', 'Chave NFS-e', 'Situação fiscal', 'Notas de fornecedores'].map(escape).join(','),
