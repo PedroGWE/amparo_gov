@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { GetServerSideProps } from 'next'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import useSWR, { useSWRConfig } from 'swr'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -496,6 +498,8 @@ function DetailDrawer({
 
 export default function ProfessoresPage() {
   const { mutate } = useSWRConfig()
+  const router = useRouter()
+  const tenant = typeof router.query.tenant === 'string' ? router.query.tenant : ''
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -552,20 +556,23 @@ export default function ProfessoresPage() {
     <DashboardLayout>
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Professores</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {data?.total ?? 0} educador{data?.total !== 1 ? 'es' : ''} cadastrado{data?.total !== 1 ? 's' : ''}
             </p>
           </div>
-          <button
-            onClick={() => { setEditItem(null); setShowForm(true) }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Novo professor
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {tenant && <Link href={`/${tenant}/educa?aba=acessos`} className="btn-secondary flex items-center gap-2">Criar acesso ao Educa</Link>}
+            <button
+              onClick={() => { setEditItem(null); setShowForm(true) }}
+              className="btn-primary flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Novo professor
+            </button>
+          </div>
         </div>
 
         {/* Filters */}

@@ -16,6 +16,7 @@ export interface Lesson {
   fim: string
   meet_url: string
   chamada_enviada_at: string | null
+  actual_started_at: string | null
   versao: number
   presencas: Attendance[]
   turma?: { nome: string }

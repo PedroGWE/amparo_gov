@@ -3256,6 +3256,8 @@ model EducaAula {
   titulo String
   inicio DateTime
   fim DateTime
+  actual_started_at DateTime?
+  started_by String?
   meet_url String
   chamada_enviada_at DateTime?
   enviada_por String?

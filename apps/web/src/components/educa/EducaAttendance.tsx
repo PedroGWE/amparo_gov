@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CheckCheck, Save, Send, Users } from 'lucide-react'
+import { Check, CheckCheck, Clock3, Save, Send, Users } from 'lucide-react'
 import api from '@/lib/api'
 import type { Detail, Lesson } from './types'
 import { dateTime, initials, errorText } from './educa-utils'
@@ -20,7 +20,9 @@ export function EducaAttendance({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  useUnsavedWork(Object.keys(marks).length > 0)
+  const [startTime, setStartTime] = useState('')
+  const [starting, setStarting] = useState(false)
+  useUnsavedWork(Object.keys(marks).length > 0 || (!!startTime && !lesson.actual_started_at))
   const active = detail.matriculas.filter((item) => item.status === 'ATIVA')
   const roster = detail.matriculas.filter(
     (item) =>
@@ -32,7 +34,29 @@ export function EducaAttendance({
   const absent = active.filter((item) => status(item.id) === 'AUSENTE').length
   const remaining = active.filter((item) => !status(item.id)).length
   const locked = !!lesson.chamada_enviada_at
+  const started = !!lesson.actual_started_at
   const [confirmSend, setConfirmSend] = useState(false)
+  async function startLesson() {
+    if (!startTime) return
+    setStarting(true)
+    setError('')
+    try {
+      await api.post(`/educa/aulas/${lesson.id}/iniciar`, {
+        versao: lesson.versao,
+        inicio_real: new Date(startTime).toISOString(),
+      })
+      await onSaved()
+      setMessage('Início da aula registrado. Faça a chamada dos alunos da turma.')
+    } catch (caught) {
+      setError(errorText(caught))
+    } finally {
+      setStarting(false)
+    }
+  }
+  function useCurrentTime() {
+    const now = new Date()
+    setStartTime(new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16))
+  }
   async function save(send: boolean) {
     setBusy(true)
     setError('')
@@ -82,6 +106,37 @@ export function EducaAttendance({
     )
   return (
     <div className="edu-attendance">
+      <section className="edu-lesson-start" aria-label="Início da aula">
+        <div className="edu-lesson-start-heading">
+          <Clock3 size={22} />
+          <div>
+            <strong>{started ? 'Aula iniciada' : locked ? 'Chamada enviada' : '1. Confirme o início da aula'}</strong>
+            <p>{started ? `Horário informado: ${dateTime(lesson.actual_started_at!)}` : locked
+              ? 'Esta chamada foi registrada antes do controle de início.'
+              : `Horário planejado: ${dateTime(lesson.inicio)}. Informe o horário em que a aula começou.`}</p>
+          </div>
+        </div>
+        {!started && !locked && (
+          <div className="edu-lesson-start-form">
+            <label className="edu-field">
+              <span>Data e horário de início real</span>
+              <input type="datetime-local" className="input" value={startTime}
+                onChange={(event) => setStartTime(event.target.value)} required />
+            </label>
+            <button type="button" className="edu-btn edu-btn-outline" onClick={useCurrentTime}>
+              Usar horário de agora
+            </button>
+            <button type="button" className="edu-btn edu-btn-primary"
+              disabled={!startTime || starting} onClick={startLesson}>
+              {starting ? 'Registrando...' : 'Iniciar aula e abrir chamada'}
+            </button>
+          </div>
+        )}
+      </section>
+      {error && !started && !locked && (
+        <p role="alert" className="edu-alert edu-alert-error">{error}</p>
+      )}
+      {(started || locked) && <>
       <div className="edu-attendance-stats">
         <div className="edu-tone-blue">
           <Users />
@@ -190,7 +245,7 @@ export function EducaAttendance({
               <button
                 type="button"
                 className="edu-btn edu-btn-primary"
-                disabled={busy || remaining > 0}
+                disabled={busy || remaining > 0 || !started}
                 onClick={() => setConfirmSend(true)}
               >
                 <Send size={17} />
@@ -233,6 +288,7 @@ export function EducaAttendance({
           ? 'Para corrigir uma chamada enviada, solicite a reabertura ao gestor.'
           : 'Marque a situação de todos os alunos antes de enviar. Abrir o Google Meet não registra presença.'}
       </p>
+      </>}
     </div>
   )
 }

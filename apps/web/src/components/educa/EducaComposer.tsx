@@ -42,11 +42,8 @@ export function EducaComposer({
         const inicio = new Date(String(data.get('inicio')))
         const fim = new Date(String(data.get('fim')))
         if (fim <= inicio) throw new Error('O horário de término deve ser posterior ao início.')
-        if (
-          !/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(
-            String(data.get('meet_url')).trim(),
-          )
-        )
+        if (String(data.get('meet_url')).trim() &&
+          !/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(String(data.get('meet_url')).trim()))
           throw new Error(
             'Cole um link do Google Meet no formato https://meet.google.com/abc-defg-hij.',
           )
@@ -54,7 +51,7 @@ export function EducaComposer({
           titulo: title,
           inicio: inicio.toISOString(),
           fim: fim.toISOString(),
-          meet_url: String(data.get('meet_url')).trim(),
+          ...(String(data.get('meet_url')).trim() ? { meet_url: String(data.get('meet_url')).trim() } : {}),
         })
       } else if (kind === 'atividade') {
         await api.post(`/educa/turmas/${classId}/atividades`, {
@@ -123,7 +120,8 @@ export function EducaComposer({
               <Field
                 name="meet_url"
                 type="url"
-                label="Link do Google Meet"
+                label="Link do Google Meet (opcional)"
+                required={false}
                 placeholder="https://meet.google.com/abc-defg-hij"
               />
               <div className="edu-form-columns">
@@ -131,8 +129,7 @@ export function EducaComposer({
                 <Field name="fim" type="datetime-local" label="Término da aula" />
               </div>
               <p className="edu-form-info">
-                Crie a reunião no Google Meet e cole o link acima. Informe o horário local do seu
-                dispositivo; o portal exibe os encontros no horário de Brasília.
+                Para aula online, informe o link do Google Meet. Os horários planejados são separados do início real confirmado na chamada.
               </p>
             </>
           ) : kind === 'atividade' ? (

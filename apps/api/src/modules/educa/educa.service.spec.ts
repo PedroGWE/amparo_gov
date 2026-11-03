@@ -15,6 +15,11 @@ const manager: JwtPayload = { ...teacher, sub: 'manager', permissions: ['*'] }
 function setup() {
   const db = {
     turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class', professor_id: 'teacher' }) },
+    professor: { count: jest.fn().mockResolvedValue(1), findFirst: jest.fn(), update: jest.fn() },
+    user: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'teacher-user' }), update: jest.fn().mockResolvedValue({ id: 'teacher-user' }) },
+    userRole: { upsert: jest.fn() },
+    role: { upsert: jest.fn().mockResolvedValue({ id: 'teacher-role' }) },
+    refreshToken: { updateMany: jest.fn() },
     matricula: {
       count: jest.fn().mockResolvedValue(0),
       findMany: jest.fn().mockResolvedValue([{ id: 'm1' }, { id: 'm2' }]),
@@ -22,7 +27,7 @@ function setup() {
     educaAula: {
       findFirst: jest
         .fn()
-        .mockResolvedValue({ id: 'lesson', turma_id: 'class', chamada_enviada_at: null }),
+        .mockResolvedValue({ id: 'lesson', turma_id: 'class', chamada_enviada_at: null, actual_started_at: new Date('2026-10-08T12:00:00Z') }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       create: jest.fn(),
     },
@@ -56,6 +61,48 @@ describe('Educa: autorização e chamada por aula', () => {
     const { db, service } = setup()
     db.turma.findFirst.mockResolvedValue({ id: 'class', professor_id: 'other' })
     await expect(service.classAccess(teacher, 'class', true)).rejects.toThrow()
+  })
+  it('impede professor inativo de acessar a turma', async () => {
+    const { db, service } = setup()
+    db.professor.count.mockResolvedValue(0)
+    await expect(service.classAccess(teacher, 'class', true)).rejects.toThrow()
+  })
+  it('cria acesso de professor com permissão Educa e vínculo ao cadastro', async () => {
+    const { db, service } = setup()
+    db.professor.findFirst.mockResolvedValue({ id: 'professor-1', nome_completo: 'Professora Teste', user_id: null })
+    await service.account(manager, { perfil: 'professor', registro_id: 'professor-1', email: 'professora@example.test', senha: 'senha-segura-123' })
+    expect(db.role.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ permissions: ['conecta:teacher'] }),
+    }))
+    expect(db.userRole.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { user_id: 'teacher-user', role_id: 'teacher-role' } }))
+    expect(db.professor.update).toHaveBeenCalledWith(expect.objectContaining({ data: { user_id: 'teacher-user' } }))
+  })
+  it('atribui o papel Educa quando o professor já possui usuário do instituto', async () => {
+    const { db, service } = setup()
+    db.professor.findFirst.mockResolvedValue({ id: 'professor-1', nome_completo: 'Professora Teste', user_id: 'teacher-user' })
+    db.user.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'teacher-user', tenant_id: 'org' })
+    await service.account(manager, { perfil: 'professor', registro_id: 'professor-1', email: 'professora@example.test', senha: 'senha-segura-123' })
+    expect(db.user.create).not.toHaveBeenCalled()
+    expect(db.userRole.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { user_id: 'teacher-user', role_id: 'teacher-role' } }))
+  })
+  it('registra o início real uma única vez e rejeita horário futuro', async () => {
+    const { db, service } = setup()
+    db.educaAula.findFirst.mockResolvedValueOnce({ id: 'lesson', turma_id: 'class', chamada_enviada_at: null, actual_started_at: null })
+    db.educaAula.findFirst.mockResolvedValueOnce({ id: 'lesson', turma_id: 'class', actual_started_at: new Date('2026-10-08T12:00:00Z') })
+    await service.startLesson(teacher, 'lesson', { versao: 0, inicio_real: '2026-10-08T12:00:00Z' })
+    await service.startLesson(teacher, 'lesson', { versao: 0, inicio_real: '2026-10-08T12:00:00Z' })
+    expect(db.educaAula.updateMany).toHaveBeenCalledTimes(1)
+    expect(db.educaAula.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenant_id: 'org', versao: 0, actual_started_at: null }),
+      data: expect.objectContaining({ started_by: 'teacher', actual_started_at: new Date('2026-10-08T12:00:00Z') }),
+    }))
+    await expect(service.startLesson(teacher, 'lesson', { versao: 0, inicio_real: '2099-01-01T00:00:00Z' })).rejects.toThrow()
+  })
+  it('não envia chamada sem início confirmado', async () => {
+    const { db, service } = setup()
+    db.educaAula.findFirst.mockResolvedValue({ id: 'lesson', turma_id: 'class', chamada_enviada_at: null, actual_started_at: null })
+    await expect(service.attendance(teacher, 'lesson', { versao: 0, itens: [] }, true)).rejects.toThrow('horário de início')
+    expect(db.educaPresenca.upsert).not.toHaveBeenCalled()
   })
   it('impede aluno de enviar chamada', async () => {
     const { service } = setup()

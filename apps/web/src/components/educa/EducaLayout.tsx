@@ -72,7 +72,7 @@ export function EducaLayout({
   const sidebarRef = useRef<HTMLElement>(null)
   const role = manager ? 'Gestor' : teacher ? 'Professor' : 'Aluno'
   const nav = [
-    { id: 'inicio', label: 'Visão geral', icon: LayoutDashboard },
+    { id: 'inicio', label: teacher && !manager ? 'Início' : 'Visão geral', icon: LayoutDashboard },
     { id: 'turmas', label: manager ? 'Turmas' : 'Minhas turmas', icon: Users },
     ...(teacher ? [{ id: 'planejamento', label: 'Planejamento', icon: CalendarDays }] : []),
     { id: 'aulas', label: teacher ? 'Aulas' : 'Minhas aulas', icon: Video },
