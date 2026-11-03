@@ -311,6 +311,7 @@ export function EducaManagement({
                   <p className="edu-caption">
                     {lesson.turma?.nome} · {dateTime(lesson.inicio)} ·{' '}
                     {lesson.chamada_enviada_at ? 'Enviada' : 'Aguardando envio'}
+                    {lesson.actual_started_at && ` · início real ${dateTime(lesson.actual_started_at)}`}
                   </p>
                 </summary>
                 {lesson.chamada_enviada_at ? (

@@ -14,6 +14,7 @@ import {
   LessonDto,
   MaterialDto,
   SubmissionDto,
+  StartLessonDto,
 } from './educa.dto'
 @Controller('educa')
 export class EducaController {
@@ -56,6 +57,13 @@ export class EducaController {
     @Body() dto: AttendanceDto,
   ) {
     return this.service.attendance(u, id, dto, false)
+  }
+  @Post('aulas/:id/iniciar') start(
+    @CurrentUser() u: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: StartLessonDto,
+  ) {
+    return this.service.startLesson(u, id, dto)
   }
   @Post('aulas/:id/enviar') send(
     @CurrentUser() u: JwtPayload,

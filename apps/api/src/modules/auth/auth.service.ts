@@ -44,6 +44,7 @@ export class AuthService {
     const allowed = permissions.includes('*') || permissions.includes(dto.portal === 'aluno' ? 'conecta:student' : 'conecta:teacher')
     if ((dto.portal === 'aluno' || dto.portal === 'professor') && !allowed) throw new UnauthorizedException('Seu cadastro não possui acesso a este portal.')
     if (dto.portal === 'aluno' && !await this.prisma.beneficiary.count({ where: { user_id: user.id, tenant_id: tenant.id, status: 'ATIVO' } })) throw new UnauthorizedException('Vínculo de aluno inativo.')
+    if (dto.portal === 'professor' && !await this.prisma.professor.count({ where: { user_id: user.id, tenant_id: tenant.id, status: 'ATIVO' } })) throw new UnauthorizedException('Vínculo de professor inativo.')
     const tokens = await this.generateTokens(user.id, tenant.id, user.email, permissions)
 
     await this.prisma.user.update({

@@ -16,6 +16,7 @@ import {
   LessonDto,
   MaterialDto,
   SubmissionDto,
+  StartLessonDto,
 } from './educa.dto'
 import * as bcrypt from 'bcryptjs'
 import { createReadStream } from 'fs'
@@ -39,7 +40,8 @@ export class EducaService {
     })
     if (!turma) throw new NotFoundException('Turma não encontrada.')
     if (this.manager(u)) return turma
-    if (u.permissions.includes('conecta:teacher') && turma.professor_id === u.sub) return turma
+    if (u.permissions.includes('conecta:teacher') && turma.professor_id === u.sub &&
+      await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: 'ATIVO' } })) return turma
     if (!write && u.permissions.includes('conecta:student')) {
       const enrolled = await this.db.matricula.count({
         where: {
@@ -54,6 +56,9 @@ export class EducaService {
     throw new ForbiddenException('Você não possui acesso a esta turma.')
   }
   async classes(u: JwtPayload) {
+    if (!this.manager(u) && u.permissions.includes('conecta:teacher') &&
+      !await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: 'ATIVO' } }))
+      throw new ForbiddenException('Acesso de professor inativo.')
     const scope: Prisma.TurmaWhereInput = this.manager(u)
       ? {}
       : {
@@ -271,6 +276,8 @@ export class EducaService {
         },
       })
       const name = 'name' in record ? record.name : record.nome_completo
+      if (record.user_id && !await tx.user.findFirst({ where: { id: record.user_id, tenant_id: u.tenantId, deleted_at: null } }))
+        throw new ConflictException('O cadastro está vinculado a uma conta inválida para este instituto.')
       const user = record.user_id
         ? await tx.user.update({
             where: { id: record.user_id },
@@ -286,6 +293,8 @@ export class EducaService {
               user_roles: { create: { role_id: role.id } },
             },
           })
+      await tx.userRole.upsert({ where: { user_id_role_id: { user_id: user.id, role_id: role.id } },
+        update: {}, create: { user_id: user.id, role_id: role.id } })
       if (student)
         await tx.beneficiary.update({ where: { id: record.id }, data: { user_id: user.id } })
       else await tx.professor.update({ where: { id: record.id }, data: { user_id: user.id } })
@@ -372,6 +381,7 @@ export class EducaService {
     return this.db.educaAula.create({
       data: {
         ...dto,
+        meet_url: dto.meet_url ?? '',
         inicio: new Date(dto.inicio),
         fim: new Date(dto.fim),
         tenant_id: u.tenantId,
@@ -379,12 +389,36 @@ export class EducaService {
       },
     })
   }
+  async startLesson(u: JwtPayload, id: string, dto: StartLessonDto) {
+    const lesson = await this.db.educaAula.findFirst({ where: { id, tenant_id: u.tenantId } })
+    if (!lesson) throw new NotFoundException('Aula não encontrada.')
+    await this.classAccess(u, lesson.turma_id, true)
+    if (lesson.chamada_enviada_at) throw new ConflictException('A chamada já foi enviada.')
+    const started = new Date(dto.inicio_real)
+    if (Number.isNaN(started.getTime()) || started.getTime() > Date.now() + 5 * 60_000)
+      throw new BadRequestException('Informe um horário de início válido, sem data futura.')
+    if (lesson.actual_started_at) {
+      if (lesson.actual_started_at.getTime() === started.getTime()) return lesson
+      throw new ConflictException('Aula já iniciada. Solicite ao gestor a correção do horário.')
+    }
+    const changed = await this.db.educaAula.updateMany({
+      where: { id, tenant_id: u.tenantId, versao: dto.versao, actual_started_at: null, chamada_enviada_at: null },
+      data: { actual_started_at: started, started_by: u.sub, versao: { increment: 1 } },
+    })
+    if (!changed.count) throw new ConflictException('A aula foi alterada. Atualize e tente novamente.')
+    await this.db.auditLog.create({ data: { tenant_id: u.tenantId, user_id: u.sub,
+      action: 'EDUCA_AULA_INICIADA', resource: 'EducaAula', resource_id: id,
+      new_value: { actual_started_at: started.toISOString() } } })
+    return this.db.educaAula.findFirst({ where: { id, tenant_id: u.tenantId } })
+  }
   async attendance(u: JwtPayload, id: string, dto: AttendanceDto, send: boolean) {
     const aula = await this.db.educaAula.findFirst({ where: { id, tenant_id: u.tenantId } })
     if (!aula) throw new NotFoundException()
     await this.classAccess(u, aula.turma_id, true)
     if (aula.chamada_enviada_at)
       throw new ConflictException('Chamada já enviada. O gestor pode reabrir para correção.')
+    if (send && !aula.actual_started_at)
+      throw new BadRequestException('Confirme o horário de início da aula antes de enviar a chamada.')
     const roster = await this.db.matricula.findMany({
       where: { turma_id: aula.turma_id, tenant_id: u.tenantId, status: 'ATIVA' },
       select: { id: true },

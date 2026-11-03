@@ -71,6 +71,25 @@ export function EducaDashboard({
           })}
         </span>
       </div>
+      {teacher && !manager && (
+        <section className="edu-start-home" aria-labelledby="edu-start-home-title">
+          <div>
+            <p className="edu-eyebrow">SUA PRÓXIMA AULA</p>
+            <h2 id="edu-start-home-title">Iniciar aula e fazer chamada</h2>
+            <p>{next
+              ? `${next.titulo} · ${next.turma.nome} · ${shortDate(next.inicio)}`
+              : classes?.length
+                ? 'Escolha sua turma, confirme o horário real de início e marque cada aluno.'
+                : 'Aguarde o gestor vincular sua primeira turma.'}</p>
+          </div>
+          <button type="button" className="edu-btn edu-btn-primary"
+            disabled={!next && !classes?.length}
+            onClick={() => openClass(next?.turma.id ?? classes![0].id, 'chamada')}>
+            <ClipboardCheck size={18} />
+            Abrir chamada
+          </button>
+        </section>
+      )}
       {loading && <Loading text="Preparando seu espaço..." />}
       <div className="edu-dashboard-grid">
         <div className="edu-dashboard-primary">

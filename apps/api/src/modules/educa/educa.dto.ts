@@ -34,7 +34,7 @@ export class LessonDto {
   @IsString() @MinLength(2) @MaxLength(200) titulo: string
   @IsISO8601() inicio: string
   @IsISO8601() fim: string
-  @Matches(/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/) meet_url: string
+  @IsOptional() @Matches(/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/) meet_url?: string
 }
 export class AttendanceEntry {
   @IsString() matricula_id: string
@@ -47,6 +47,10 @@ export class AttendanceDto {
   @ValidateNested({ each: true })
   @Type(() => AttendanceEntry)
   itens: AttendanceEntry[]
+}
+export class StartLessonDto {
+  @IsInt() @Min(0) versao: number
+  @IsISO8601() inicio_real: string
 }
 export class MaterialDto {
   @IsString() @MinLength(2) @MaxLength(200) titulo: string

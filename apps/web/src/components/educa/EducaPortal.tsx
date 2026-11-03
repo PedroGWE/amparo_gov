@@ -315,7 +315,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                 )}
                 {d?.canTeach &&
                   hasClass &&
-                  ['aulas', 'planejamento', 'materiais', 'atividades'].includes(section) && (
+                  ['aulas', 'planejamento', 'materiais', 'atividades', 'chamada'].includes(section) && (
                     <button
                       type="button"
                       className="edu-btn edu-btn-primary"
@@ -334,7 +334,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                         ? 'Novo material'
                         : section === 'atividades'
                           ? 'Nova atividade'
-                          : 'Agendar aula'}
+                          : section === 'chamada' ? 'Nova aula para chamada' : 'Agendar aula'}
                     </button>
                   )}
               </div>
@@ -617,9 +617,9 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                           <button
                             type="button"
                             className="edu-btn edu-btn-primary"
-                            onClick={() => navigate('planejamento')}
+                            onClick={() => setComposer('aula')}
                           >
-                            Ir para o planejamento
+                            Criar aula para chamada
                           </button>
                         }
                       />
