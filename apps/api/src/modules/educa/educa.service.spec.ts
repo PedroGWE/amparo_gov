@@ -15,7 +15,7 @@ const manager: JwtPayload = { ...teacher, sub: 'manager', permissions: ['*'] }
 function setup() {
   const db = {
     turma: { findFirst: jest.fn().mockResolvedValue({ id: 'class', professor_id: 'teacher' }) },
-    professor: { count: jest.fn().mockResolvedValue(1), findFirst: jest.fn(), update: jest.fn() },
+    professor: { count: jest.fn().mockResolvedValue(0), findFirst: jest.fn(), update: jest.fn() },
     user: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'teacher-user' }), update: jest.fn().mockResolvedValue({ id: 'teacher-user' }) },
     userRole: { upsert: jest.fn() },
     role: { upsert: jest.fn().mockResolvedValue({ id: 'teacher-role' }) },
@@ -64,8 +64,15 @@ describe('Educa: autorização e chamada por aula', () => {
   })
   it('impede professor inativo de acessar a turma', async () => {
     const { db, service } = setup()
-    db.professor.count.mockResolvedValue(0)
+    db.professor.count.mockResolvedValue(1)
     await expect(service.classAccess(teacher, 'class', true)).rejects.toThrow()
+  })
+  it('permite acesso Educa vinculado à turma sem cadastro contratual', async () => {
+    const { db, service } = setup()
+    await expect(service.classAccess(teacher, 'class', true)).resolves.toMatchObject({ id: 'class' })
+    expect(db.professor.count).toHaveBeenCalledWith({
+      where: { tenant_id: 'org', user_id: 'teacher', status: { not: 'ATIVO' } },
+    })
   })
   it('cria acesso de professor com permissão Educa e vínculo ao cadastro', async () => {
     const { db, service } = setup()

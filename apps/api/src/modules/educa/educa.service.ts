@@ -41,7 +41,7 @@ export class EducaService {
     if (!turma) throw new NotFoundException('Turma não encontrada.')
     if (this.manager(u)) return turma
     if (u.permissions.includes('conecta:teacher') && turma.professor_id === u.sub &&
-      await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: 'ATIVO' } })) return turma
+      !await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: { not: 'ATIVO' } } })) return turma
     if (!write && u.permissions.includes('conecta:student')) {
       const enrolled = await this.db.matricula.count({
         where: {
@@ -57,7 +57,7 @@ export class EducaService {
   }
   async classes(u: JwtPayload) {
     if (!this.manager(u) && u.permissions.includes('conecta:teacher') &&
-      !await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: 'ATIVO' } }))
+      await this.db.professor.count({ where: { tenant_id: u.tenantId, user_id: u.sub, status: { not: 'ATIVO' } } }))
       throw new ForbiddenException('Acesso de professor inativo.')
     const scope: Prisma.TurmaWhereInput = this.manager(u)
       ? {}

@@ -12,6 +12,8 @@
 
 O professor não recebe acesso às turmas de outros professores ou de outro tenant. Um cadastro inativo não pode entrar no portal. A hora de início não é inferida do planejamento e nenhuma presença é preenchida automaticamente.
 
+O acesso Educa pode ser provisionado como conta de usuário com papel `EDUCA_PROFESSOR` e vínculo explícito à turma, mesmo quando o cadastro contratual do professor ainda não existe. Isso evita preencher CPF ou contrato fictícios. Se houver cadastro formal ligado à conta e ele estiver inativo, o acesso ao portal e à turma é negado. A integração posterior ao cadastro formal deve manter o mesmo usuário e verificar o vínculo antes de alterar a turma.
+
 ## Migração e validação
 
 A migration `20261103100000_educa_lesson_start` adiciona `actual_started_at` e `started_by` à aula. Após aplicá-la, executar `prisma generate` no pacote da API. Chamadas históricas permanecem visíveis; aquelas anteriores a este controle não recebem um horário de início inventado.
