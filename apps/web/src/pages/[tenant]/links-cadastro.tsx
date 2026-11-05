@@ -12,6 +12,7 @@ export default function LinksCadastroPage() {
   const tenant = typeof router.query.tenant === 'string' ? router.query.tenant : ''
   const [rows, setRows] = useState<LinkRow[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -43,6 +44,21 @@ export default function LinksCadastroPage() {
     }
   }
 
+  async function downloadWord() {
+    if (!rows?.length) return
+    setDownloading(true)
+    setError('')
+    try {
+      const { downloadBeneficiaryLinksDocx } = await import('@/lib/beneficiary-links-docx')
+      await downloadBeneficiaryLinksDocx(rows)
+      setMessage('Documento Word baixado.')
+    } catch {
+      setError('Não foi possível gerar o documento Word. Tente novamente.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return <DashboardLayout>
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -57,7 +73,7 @@ export default function LinksCadastroPage() {
       </div>
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Os links são individuais, válidos por 30 dias e podem ser usados uma vez. Gerar esta lista substitui os links de cadastro anteriores. Compartilhe cada link somente com o respectivo beneficiário ou responsável e copie a lista antes de sair desta página.
+        Os links são individuais, válidos por 30 dias e podem ser usados uma vez. Gerar esta lista substitui os links de cadastro anteriores. Compartilhe cada link somente com o respectivo beneficiário ou responsável e baixe o documento antes de sair desta página.
       </div>
 
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -69,7 +85,10 @@ export default function LinksCadastroPage() {
             <h2 className="font-semibold text-gray-900">{rows.length} beneficiário{rows.length === 1 ? '' : 's'}</h2>
             {!!rows.length && <p className="text-xs text-gray-500">Links válidos até {new Date(rows[0].expires_at).toLocaleDateString('pt-BR')}.</p>}
           </div>
-          {!!rows.length && <button type="button" className="btn-ghost" onClick={() => copy(rows.map(({ name, id, url }) => `${name} | ID: ${id} | ${url}`).join('\n'), 'Lista copiada.')}>Copiar lista</button>}
+          {!!rows.length && <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-ghost" onClick={() => copy(rows.map(({ name, id, url }) => `${name} | ID: ${id} | ${url}`).join('\n'), 'Lista copiada.')}>Copiar lista</button>
+            <button type="button" className="btn-primary disabled:opacity-50" disabled={downloading} onClick={downloadWord}>{downloading ? 'Gerando Word...' : 'Baixar Word'}</button>
+          </div>}
         </div>
         {!rows.length ? <p className="p-5 text-sm text-gray-600">Nenhum beneficiário cadastrado.</p> : <div className="divide-y divide-gray-100">
           {rows.map((row) => <div key={row.id} className="grid gap-2 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] md:items-center">
