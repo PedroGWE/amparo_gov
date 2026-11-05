@@ -18,7 +18,6 @@ export function EducaManagement({
   onSaved: () => Promise<unknown>
   detail?: Detail
 }) {
-  const [profile, setProfile] = useState('aluno')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -47,10 +46,7 @@ export function EducaManagement({
   async function account(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
-    const alreadyHasAccess =
-      profile === 'aluno'
-        ? catalog.data?.alunos.find((item) => item.id === data.get('registro_id'))?.user_id
-        : catalog.data?.professores.find((item) => item.id === data.get('registro_id'))?.user_id
+    const alreadyHasAccess = catalog.data?.professores.find((item) => item.id === data.get('registro_id'))?.user_id
     if (
       alreadyHasAccess &&
       !window.confirm(
@@ -61,12 +57,10 @@ export function EducaManagement({
     await action(
       () =>
         api.post('/educa/acessos', {
-          perfil: profile,
+          perfil: 'professor',
           registro_id: data.get('registro_id'),
           senha: data.get('senha'),
-          ...(profile === 'aluno'
-            ? { matricula: data.get('matricula') }
-            : { email: data.get('email') }),
+          email: data.get('email'),
         }),
       'Acesso salvo. Entregue as credenciais ao usuário por um canal seguro.',
     )
@@ -99,8 +93,8 @@ export function EducaManagement({
       )}
       {view === 'acessos' && (
         <Panel
-          title="Acesso para aprender e ensinar"
-          description="Vincule um cadastro existente e prepare o acesso individual."
+          title="Acesso dos professores"
+          description="Vincule um professor cadastrado e prepare o acesso individual às chamadas."
         >
           {!catalog.data && !catalog.error ? (
             <Loading />
@@ -108,28 +102,10 @@ export function EducaManagement({
             catalog.data && (
               <form onSubmit={account} className="edu-form max-w-xl">
                 <label className="edu-field">
-                  <span>Perfil</span>
-                  <select
-                    className="input"
-                    value={profile}
-                    onChange={(event) => setProfile(event.target.value)}
-                  >
-                    <option value="aluno">Aluno</option>
-                    <option value="professor">Professor</option>
-                  </select>
-                </label>
-                <label className="edu-field">
                   <span>Cadastro *</span>
                   <select className="input" name="registro_id" required>
                     <option value="">Selecione o cadastro</option>
-                    {profile === 'aluno'
-                      ? catalog.data.alunos.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.name}
-                            {item.user_id ? ' · já possui acesso' : ''}
-                          </option>
-                        ))
-                      : catalog.data.professores.map((item) => (
+                    {catalog.data.professores.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.nome_completo}
                             {item.user_id ? ' · já possui acesso' : ''}
@@ -137,15 +113,7 @@ export function EducaManagement({
                         ))}
                   </select>
                 </label>
-                {profile === 'aluno' ? (
-                  <Field
-                    name="matricula"
-                    label="Matrícula de acesso"
-                    placeholder="3 a 30 letras, números ou hífen"
-                  />
-                ) : (
-                  <Field name="email" type="email" label="E-mail do professor" />
-                )}
+                <Field name="email" type="email" label="E-mail do professor" />
                 <label className="edu-field">
                   <span>Senha inicial *</span>
                   <input
@@ -161,7 +129,7 @@ export function EducaManagement({
                 </label>
                 <p className="edu-form-info">
                   Se o cadastro já tiver acesso, a senha será redefinida. Informe as credenciais
-                  diretamente ao aluno ou professor.
+                  diretamente ao professor.
                 </p>
                 <div className="edu-button-row">
                   <button className="edu-btn edu-btn-primary" disabled={busy}>
@@ -175,6 +143,19 @@ export function EducaManagement({
               </form>
             )
           )}
+          {catalog.data && <div className="mt-6 space-y-2">
+            <h3 className="font-semibold">Professores cadastrados</h3>
+            <p className="text-sm">Instituto: <strong>{tenant}</strong> · Entrada: <a href="/educa" target="_blank" rel="noreferrer" className="underline">/educa</a></p>
+            {catalog.data.professores.map((item) => <p key={item.id} className="rounded-lg border p-3 text-sm">
+              <strong>{item.nome_completo}</strong> · {item.user?.email ?? 'Sem acesso Educa'}
+              {item.user && <> · {item.user.status === 'ACTIVE' ? 'Conta ativa' : 'Conta inativa'}</>}
+            </p>)}
+            {catalog.data.contas_professores?.filter((account) => !catalog.data?.professores.some((professor) => professor.user_id === account.id)).map((account) => <p key={account.id} className="rounded-lg border p-3 text-sm">
+              <strong>{account.name}</strong> · {account.email} · {account.status === 'ACTIVE' ? 'Conta ativa' : 'Conta inativa'} · Sem cadastro formal vinculado
+            </p>)}
+            {!catalog.data.professores.length && <p className="text-sm">Nenhum professor ativo cadastrado.</p>}
+            <p className="text-xs">Senhas existentes não podem ser consultadas. Para entregar uma nova senha, selecione o professor acima e redefina o acesso.</p>
+          </div>}
         </Panel>
       )}
       {view === 'turma' && (

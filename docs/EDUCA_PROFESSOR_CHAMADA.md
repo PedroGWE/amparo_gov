@@ -1,5 +1,9 @@
 # Acesso do professor e início da chamada no Educa
 
+Nesta primeira liberação, `/educa` aceita somente professores. O portal mostra Início, Turmas e Chamada. O gestor mantém Acessos, Turmas, Alunos e Chamadas recebidas para preparar e acompanhar as chamadas. A criação de acessos de aluno e as funções de materiais e atividades ficam indisponíveis nesta etapa; os registros existentes são preservados.
+
+Em **Educa → Acessos**, o gestor vê o nome, e-mail de entrada e estado da conta de cada professor ativo. Senhas existentes são armazenadas como hash e não podem ser consultadas. Para entregar uma nova senha, o gestor redefine o acesso do professor e informa a credencial por um canal seguro.
+
 ## Fluxo de teste
 
 1. O gestor cadastra o professor em **Professores** e o mantém ativo.

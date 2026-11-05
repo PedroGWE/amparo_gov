@@ -6,6 +6,7 @@ export function educationRedirect(
   section: EducaSection,
 ): GetServerSideProps {
   return async (ctx) => {
+    if (profile === 'aluno') return { redirect: { destination: '/educa', permanent: false } }
     if (!ctx.req.cookies.refresh_token)
       return { redirect: { destination: '/educa', permanent: false } }
     const tenant = ctx.params?.tenant

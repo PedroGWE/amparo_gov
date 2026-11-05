@@ -72,24 +72,15 @@ export function EducaLayout({
   const sidebarRef = useRef<HTMLElement>(null)
   const role = manager ? 'Gestor' : teacher ? 'Professor' : 'Aluno'
   const nav = [
-    { id: 'inicio', label: teacher && !manager ? 'Início' : 'Visão geral', icon: LayoutDashboard },
+    { id: 'inicio', label: 'Início', icon: LayoutDashboard },
     { id: 'turmas', label: manager ? 'Turmas' : 'Minhas turmas', icon: Users },
-    ...(teacher ? [{ id: 'planejamento', label: 'Planejamento', icon: CalendarDays }] : []),
-    { id: 'aulas', label: teacher ? 'Aulas' : 'Minhas aulas', icon: Video },
-    { id: 'atividades', label: teacher ? 'Atividades' : 'Minhas atividades', icon: ClipboardCheck },
-    { id: 'materiais', label: 'Biblioteca', icon: BookOpen },
-    {
-      id: teacher ? 'chamada' : 'frequencia',
-      label: teacher ? 'Chamada' : 'Minha frequência',
-      icon: CheckSquare,
-    },
+    { id: 'chamada', label: 'Chamada', icon: CheckSquare },
     ...(manager
       ? [
           { id: 'acessos', label: 'Acessos', icon: ShieldCheck },
           { id: 'relatorios', label: 'Chamadas recebidas', icon: FileText },
         ]
       : []),
-    ...(!teacher ? [{ id: 'perfil', label: 'Meu perfil', icon: UserRound }] : []),
   ]
   useEffect(() => {
     function key(event: KeyboardEvent) {

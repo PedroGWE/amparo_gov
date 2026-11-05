@@ -91,7 +91,7 @@ export class EducaService {
   }
   async catalog(u: JwtPayload) {
     this.requireManager(u)
-    const [alunos, professores, projects] = await Promise.all([
+    const [alunos, professores, projects, contas_professores] = await Promise.all([
       this.db.beneficiary.findMany({
         where: { tenant_id: u.tenantId, status: 'ATIVO' },
         select: { id: true, name: true, user_id: true, user: { select: { student_code: true } } },
@@ -99,15 +99,20 @@ export class EducaService {
       }),
       this.db.professor.findMany({
         where: { tenant_id: u.tenantId, status: 'ATIVO' },
-        select: { id: true, nome_completo: true, user_id: true },
+        select: { id: true, nome_completo: true, user_id: true, user: { select: { email: true, status: true } } },
         orderBy: { nome_completo: 'asc' },
       }),
       this.db.project.findMany({
         where: { tenant_id: u.tenantId, deleted_at: null },
         select: { id: true, name: true },
       }),
+      this.db.user.findMany({
+        where: { tenant_id: u.tenantId, deleted_at: null, user_roles: { some: { role: { name: 'EDUCA_PROFESSOR' } } } },
+        select: { id: true, name: true, email: true, status: true },
+        orderBy: { name: 'asc' },
+      }),
     ])
-    return { alunos, professores, projects }
+    return { alunos, professores, projects, contas_professores }
   }
 
   async overview(u: JwtPayload) {
@@ -234,6 +239,7 @@ export class EducaService {
   }
   async account(u: JwtPayload, dto: AccountDto) {
     this.requireManager(u)
+    if (String(dto.perfil) !== 'professor') throw new BadRequestException('O acesso Educa está disponível inicialmente para professores.')
     const student = dto.perfil === 'aluno'
     if (student ? !dto.matricula : !dto.email)
       throw new BadRequestException('Informe matrícula do aluno ou e-mail do professor.')
