@@ -31,6 +31,13 @@ import type { JwtPayload } from '../auth/types/jwt-payload'
 export class BeneficiariosController {
   constructor(private beneficiarios: BeneficiariosService, private storage: StorageService, private profileInvites: ProfileInvitesService) {}
 
+  @Post('profile-invites')
+  @RequirePermissions('beneficiarios:update')
+  @Header('Cache-Control', 'private, no-store')
+  createProfileInviteList(@CurrentUser('tenantId') tid: string) {
+    return this.profileInvites.createList(tid)
+  }
+
   @Post(':id/profile-invite')
   @RequirePermissions('beneficiarios:update')
   createProfileInvite(@CurrentUser('tenantId') tid: string, @Param('id') id: string) {

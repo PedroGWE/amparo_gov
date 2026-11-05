@@ -12,6 +12,20 @@ const beneficiary = {
 }
 
 describe('ProfileInvitesService', () => {
+  it('creates a tenant-scoped named list without storing plaintext tokens', async () => {
+    const tx = { beneficiaryProfileInvite: { updateMany: jest.fn(), createMany: jest.fn() } }
+    const prisma = {
+      beneficiary: { findMany: jest.fn().mockResolvedValue([{ id: 'student-1', name: 'Ana Silva', tenant: { slug: 'instituto' } }]) },
+      $transaction: (callback: (client: any) => Promise<void>) => callback(tx),
+    }
+    const result = await new ProfileInvitesService(prisma as never).createList('tenant-1')
+    expect(prisma.beneficiary.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenant_id: 'tenant-1', deleted_at: null }, orderBy: { name: 'asc' } }))
+    expect(tx.beneficiaryProfileInvite.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenant_id: 'tenant-1', used_at: null } }))
+    expect(result).toEqual([expect.objectContaining({ id: 'student-1', name: 'Ana Silva', slug: 'instituto', token: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/) })])
+    expect(tx.beneficiaryProfileInvite.createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ beneficiary_id: 'student-1', tenant_id: 'tenant-1', token_hash: expect.any(String) })] })
+    expect(JSON.stringify(tx.beneficiaryProfileInvite.createMany.mock.calls)).not.toContain(result[0].token)
+  })
+
   it('creates a distinct bearer link and invalidates earlier links for the same beneficiary', async () => {
     const tx = {
       beneficiaryProfileInvite: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), create: jest.fn() },

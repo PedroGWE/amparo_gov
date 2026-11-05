@@ -763,6 +763,7 @@ export default function BeneficiariosPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {typeof router.query.tenant === 'string' && <Link href={`/${router.query.tenant}/links-cadastro`} className="btn-ghost">Lista de links</Link>}
             <button type="button" onClick={() => refreshBeneficiarios()} disabled={isValidating} className="btn-ghost disabled:opacity-40">
               {isValidating ? 'Atualizando...' : 'Atualizar cadastros'}
             </button>
