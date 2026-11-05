@@ -8,7 +8,7 @@ const beneficiary = {
   cep: null, logradouro: null, numero: null, complemento: null, bairro: null, cidade: null,
   uf_endereco: null, escola: null, serie_ano: null, necessidades_especiais: null,
   alergias: null, medicamentos: null, observacoes_gerais: null,
-  termo_consentimento: false, autorizacao_uso_imagem: false,
+  termo_consentimento: false, autorizacao_uso_imagem: false, responsaveis: [],
 }
 
 describe('ProfileInvitesService', () => {
@@ -47,5 +47,23 @@ describe('ProfileInvitesService', () => {
     expect(tx.beneficiary.update).toHaveBeenCalledTimes(1)
     await expect(service.complete('instituto', 'a'.repeat(43), dto)).rejects.toBeInstanceOf(NotFoundException)
     expect(tx.beneficiary.update).toHaveBeenCalledTimes(1)
+  })
+
+  it('saves family data and the beneficiary’s responsible person', async () => {
+    const tx = {
+      beneficiaryProfileInvite: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      beneficiary: { update: jest.fn() }, responsavel: { create: jest.fn() },
+    }
+    const prisma = {
+      beneficiaryProfileInvite: { findUnique: jest.fn().mockResolvedValue({ id: 'invite-1', beneficiary_id: beneficiary.id, tenant_id: beneficiary.tenant_id, used_at: null, expires_at: new Date(Date.now() + 60_000), beneficiary }) },
+      $transaction: (callback: (client: any) => Promise<void>) => callback(tx),
+    }
+    await new ProfileInvitesService(prisma as never).complete('instituto', 'a'.repeat(43), {
+      name: 'Ana Silva', termo_consentimento: true, autorizacao_uso_imagem: false,
+      renda_familiar: 1200, pessoas_residencia: 3,
+      responsavel_nome: 'Maria Silva', responsavel_parentesco: 'MAE', responsavel_telefone: '11999999999',
+    })
+    expect(tx.beneficiary.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ renda_familiar: 1200, pessoas_residencia: 3 }) }))
+    expect(tx.responsavel.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ beneficiary_id: 'student-1', nome_completo: 'Maria Silva', parentesco: 'MAE' }) }))
   })
 })

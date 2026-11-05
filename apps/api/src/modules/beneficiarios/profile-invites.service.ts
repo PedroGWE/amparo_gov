@@ -34,7 +34,7 @@ export class ProfileInvitesService {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new NotFoundException('Link inválido ou expirado')
     const invite = await this.prisma.beneficiaryProfileInvite.findUnique({
       where: { token_hash: hash(token) },
-      include: { beneficiary: { include: { tenant: { select: { slug: true } } } } },
+      include: { beneficiary: { include: { tenant: { select: { slug: true } }, responsaveis: { orderBy: { created_at: 'asc' }, take: 1 } } } },
     })
     if (!invite || invite.used_at || invite.expires_at <= new Date() || invite.beneficiary.deleted_at ||
         invite.beneficiary.tenant_id !== invite.tenant_id || invite.beneficiary.tenant.slug !== slug) {
@@ -53,6 +53,12 @@ export class ProfileInvitesService {
       escola: b.escola, serie_ano: b.serie_ano,
       necessidades_especiais: b.necessidades_especiais, alergias: b.alergias,
       medicamentos: b.medicamentos, observacoes_gerais: b.observacoes_gerais,
+      renda_familiar: b.renda_familiar?.toNumber() ?? null, pessoas_residencia: b.pessoas_residencia,
+      responsavel_nome: b.responsaveis[0]?.nome_completo ?? null,
+      responsavel_parentesco: b.responsaveis[0]?.parentesco ?? null,
+      responsavel_cpf: b.responsaveis[0]?.cpf ?? null,
+      responsavel_telefone: b.responsaveis[0]?.telefone ?? null,
+      responsavel_email: b.responsaveis[0]?.email ?? null,
       termo_consentimento: b.termo_consentimento,
       autorizacao_uso_imagem: b.autorizacao_uso_imagem,
       project: b.project_id ? await this.prisma.project.findFirst({ where: { id: b.project_id, tenant_id: b.tenant_id }, select: { name: true } }) : null,
@@ -62,6 +68,10 @@ export class ProfileInvitesService {
   async complete(slug: string, token: string, dto: CompleteProfileDto) {
     const invite = await this.findValid(slug, token)
     if (!dto.termo_consentimento) throw new BadRequestException('Confirme o consentimento para enviar o perfil')
+    const hasResponsavel = !!(dto.responsavel_nome || dto.responsavel_parentesco || dto.responsavel_cpf || dto.responsavel_telefone || dto.responsavel_email)
+    if (hasResponsavel && (!dto.responsavel_nome?.trim() || !dto.responsavel_parentesco)) {
+      throw new BadRequestException('Informe o nome e o parentesco do responsável')
+    }
     const cpf = dto.cpf?.replace(/\D/g, '') || null
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -86,10 +96,24 @@ export class ProfileInvitesService {
             necessidades_especiais: dto.necessidades_especiais?.trim() || null,
             alergias: dto.alergias?.trim() || null, medicamentos: dto.medicamentos?.trim() || null,
             observacoes_gerais: dto.observacoes_gerais?.trim() || null,
+            renda_familiar: dto.renda_familiar ?? null,
+            pessoas_residencia: dto.pessoas_residencia ?? null,
             termo_consentimento: true, data_consentimento: new Date(),
             autorizacao_uso_imagem: dto.autorizacao_uso_imagem,
           },
         })
+        if (hasResponsavel) {
+          const data = {
+            nome_completo: dto.responsavel_nome!.trim(),
+            parentesco: dto.responsavel_parentesco!,
+            cpf: dto.responsavel_cpf?.replace(/\D/g, '') || null,
+            telefone: dto.responsavel_telefone?.trim() || null,
+            email: dto.responsavel_email?.trim() || null,
+          }
+          const existing = invite.beneficiary.responsaveis[0]
+          if (existing) await tx.responsavel.update({ where: { id: existing.id }, data })
+          else await tx.responsavel.create({ data: { ...data, beneficiary_id: invite.beneficiary_id } })
+        }
       })
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
