@@ -2151,6 +2151,7 @@ model Beneficiary {
   vinculos_projetos BeneficiarioProjeto[]
   matriculas        Matricula[]
   documents         Document[]
+  profile_invites   BeneficiaryProfileInvite[]
   cursos            Curso[] @relation("CursoBeneficiarios")
 
   @@unique([tenant_id, cpf])
@@ -2160,6 +2161,21 @@ model Beneficiary {
   @@index([status])
   @@index([cpf])
   @@map("beneficiaries")
+}
+
+model BeneficiaryProfileInvite {
+  id             String   @id @default(cuid())
+  beneficiary_id String
+  tenant_id      String
+  token_hash     String   @unique
+  expires_at     DateTime
+  used_at        DateTime?
+  created_at     DateTime @default(now())
+  beneficiary    Beneficiary @relation(fields: [beneficiary_id], references: [id], onDelete: Cascade)
+
+  @@index([beneficiary_id, used_at])
+  @@index([tenant_id])
+  @@map("beneficiary_profile_invites")
 }
 
 model BeneficiaryActivity {

@@ -665,6 +665,8 @@ export default function BeneficiariosPage() {
   const [removeMessage, setRemoveMessage] = useState('')
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null)
+  const [invitingId, setInvitingId] = useState<string | null>(null)
+  const [profileLink, setProfileLink] = useState<{ name: string; url: string; expires: string } | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const requestedStudent = typeof router.query.aluno === 'string' ? router.query.aluno : null
   useEffect(() => { if (requestedStudent) setDetailId(requestedStudent) }, [requestedStudent])
@@ -733,6 +735,21 @@ export default function BeneficiariosPage() {
     }
   }
 
+  async function createProfileLink(b: Beneficiario) {
+    setEditError('')
+    setProfileLink(null)
+    setInvitingId(b.id)
+    try {
+      const invite = await beneficiariosService.createProfileInvite(b.id)
+      const url = `${window.location.origin}/${encodeURIComponent(invite.slug)}/completar-perfil/${encodeURIComponent(invite.token)}`
+      setProfileLink({ name: b.name, url, expires: invite.expires_at })
+    } catch {
+      setEditError('Não foi possível gerar o link de perfil. Tente novamente.')
+    } finally {
+      setInvitingId(null)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -760,6 +777,11 @@ export default function BeneficiariosPage() {
           </div>
         </div>
         {editError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
+        {profileLink && <div className="rounded-lg border border-brand-200 bg-brand-50 p-4 text-sm text-brand-900" role="status">
+          <p className="font-semibold">Link de preenchimento de {profileLink.name}</p>
+          <p className="mt-1">Válido até {new Date(profileLink.expires).toLocaleDateString('pt-BR')}. Gerar outro link cancela o anterior. Compartilhe apenas com o beneficiário ou responsável.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2"><input aria-label="Link individual do perfil" readOnly value={profileLink.url} className="input min-w-0 flex-1" onFocus={event => event.currentTarget.select()} /><button type="button" className="btn-primary" onClick={() => navigator.clipboard.writeText(profileLink.url)}>Copiar link</button><button type="button" className="btn-ghost" onClick={() => setProfileLink(null)}>Fechar</button></div>
+        </div>}
         {removeMessage && <div role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{removeMessage}</div>}
         {loadError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Não foi possível atualizar os cadastros. <button type="button" onClick={() => refreshBeneficiarios()} className="font-medium underline">Tentar novamente</button></div>}
 
@@ -833,6 +855,7 @@ export default function BeneficiariosPage() {
                     <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
                       <button onClick={() => setDetailId(b.id)} className="text-sm font-medium text-brand-700 hover:text-brand-800">Ver perfil completo</button>
                       <div className="flex gap-1">
+                        <button type="button" onClick={() => createProfileLink(b)} disabled={invitingId === b.id} className="px-2 text-xs font-medium text-brand-700 hover:underline disabled:opacity-50">{invitingId === b.id ? 'Gerando...' : 'Link do perfil'}</button>
                         <button aria-label={`Editar ${b.name}`} onClick={() => openEdit(b)} disabled={loadingEditId === b.id} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-700 disabled:opacity-50"><Edit2 className="h-4 w-4" /></button>
                         <button aria-label={`Excluir cadastro de ${b.name}`} title="Excluir cadastro" onClick={() => handleDelete(b)} disabled={removingId === b.id} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600 disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
