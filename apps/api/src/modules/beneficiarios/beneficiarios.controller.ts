@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -21,11 +22,20 @@ import { CreateResponsavelDto } from './dto/create-responsavel.dto'
 import { CreateVinculoDto } from './dto/create-vinculo.dto'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
+import { Public } from '../../common/decorators/public.decorator'
+import { ProfileInvitesService } from './profile-invites.service'
+import { CompleteProfileDto } from './dto/complete-profile.dto'
 import type { JwtPayload } from '../auth/types/jwt-payload'
 
 @Controller('beneficiarios')
 export class BeneficiariosController {
-  constructor(private beneficiarios: BeneficiariosService, private storage: StorageService) {}
+  constructor(private beneficiarios: BeneficiariosService, private storage: StorageService, private profileInvites: ProfileInvitesService) {}
+
+  @Post(':id/profile-invite')
+  @RequirePermissions('beneficiarios:update')
+  createProfileInvite(@CurrentUser('tenantId') tid: string, @Param('id') id: string) {
+    return this.profileInvites.create(tid, id)
+  }
 
   // ── CRUD principal ────────────────────────────────────────────
 
@@ -153,5 +163,24 @@ export class BeneficiariosController {
     @Param('vId') vId: string,
   ) {
     return this.beneficiarios.removeVinculo(tid, id, vId)
+  }
+}
+
+@Controller('beneficiary-profile')
+export class PublicBeneficiaryProfileController {
+  constructor(private profileInvites: ProfileInvitesService) {}
+
+  @Public()
+  @Get(':slug/:token')
+  @Header('Cache-Control', 'private, no-store')
+  preview(@Param('slug') slug: string, @Param('token') token: string) {
+    return this.profileInvites.preview(slug, token)
+  }
+
+  @Public()
+  @Post(':slug/:token')
+  @Header('Cache-Control', 'private, no-store')
+  complete(@Param('slug') slug: string, @Param('token') token: string, @Body() dto: CompleteProfileDto) {
+    return this.profileInvites.complete(slug, token, dto)
   }
 }

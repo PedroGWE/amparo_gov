@@ -30,7 +30,8 @@ export function middleware(request: NextRequest) {
     /^\/android-chrome-\d+x\d+\.png$/.test(pathname) ||
     pathname === '/site.webmanifest' ||
     pathname === '/apple-touch-icon.png' ||
-    /^\/[^/]+\/inscricao\/?$/.test(pathname)
+    /^\/[^/]+\/inscricao\/?$/.test(pathname) ||
+    /^\/[^/]+\/completar-perfil\/[^/]+\/?$/.test(pathname)
 
   if (!isPublic && !request.cookies.get('refresh_token')) {
     const loginUrl = publicUrl

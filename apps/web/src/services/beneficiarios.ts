@@ -94,6 +94,9 @@ export const beneficiariosService = {
   update: (id: string, dto: Record<string, unknown>): Promise<Beneficiario> =>
     api.patch(`/beneficiarios/${id}`, dto).then((r) => r.data),
 
+  createProfileInvite: (id: string): Promise<{ token: string; slug: string; expires_at: string }> =>
+    api.post(`/beneficiarios/${id}/profile-invite`).then((r) => r.data),
+
   remove: (id: string): Promise<void> =>
     api.delete(`/beneficiarios/${id}`),
 
