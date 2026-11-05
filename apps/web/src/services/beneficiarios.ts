@@ -79,6 +79,14 @@ export interface BeneficiariosPage {
   totalPages: number
 }
 
+export interface BeneficiarioProfileInvite {
+  id: string
+  name: string
+  slug: string
+  token: string
+  expires_at: string
+}
+
 export const beneficiariosService = {
   downloadDocument: (id: string, documentId: string) =>
     api.get(`/beneficiarios/${id}/documents/${documentId}/download`, { responseType: 'blob' }).then((r) => r.data as Blob),
@@ -96,6 +104,9 @@ export const beneficiariosService = {
 
   createProfileInvite: (id: string): Promise<{ token: string; id: string; slug: string; expires_at: string }> =>
     api.post(`/beneficiarios/${id}/profile-invite`).then((r) => r.data),
+
+  createProfileInviteList: (): Promise<BeneficiarioProfileInvite[]> =>
+    api.post('/beneficiarios/profile-invites').then((r) => r.data),
 
   remove: (id: string): Promise<void> =>
     api.delete(`/beneficiarios/${id}`),

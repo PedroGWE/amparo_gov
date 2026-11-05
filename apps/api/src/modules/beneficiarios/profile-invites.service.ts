@@ -30,6 +30,40 @@ export class ProfileInvitesService {
     return { token, id: beneficiary.id, slug: beneficiary.tenant.slug, expires_at: expiresAt }
   }
 
+  async createList(tenantId: string) {
+    const beneficiaries = await this.prisma.beneficiary.findMany({
+      where: { tenant_id: tenantId, deleted_at: null },
+      select: { id: true, name: true, tenant: { select: { slug: true } } },
+      orderBy: { name: 'asc' },
+    })
+    if (!beneficiaries.length) return []
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const links = beneficiaries.map((beneficiary) => ({
+      id: beneficiary.id,
+      name: beneficiary.name,
+      slug: beneficiary.tenant.slug,
+      token: randomBytes(32).toString('base64url'),
+      expires_at: expiresAt,
+    }))
+    await this.prisma.$transaction(async (tx) => {
+      await tx.beneficiaryProfileInvite.updateMany({
+        where: { tenant_id: tenantId, used_at: null },
+        data: { used_at: new Date() },
+      })
+      for (let start = 0; start < links.length; start += 250) {
+        await tx.beneficiaryProfileInvite.createMany({
+          data: links.slice(start, start + 250).map((link) => ({
+            beneficiary_id: link.id,
+            tenant_id: tenantId,
+            token_hash: hash(link.token),
+            expires_at: expiresAt,
+          })),
+        })
+      }
+    }, { timeout: 30000 })
+    return links
+  }
+
   private async findValid(slug: string, token: string, beneficiaryId?: string) {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new NotFoundException('Link inválido ou expirado')
     const invite = await this.prisma.beneficiaryProfileInvite.findUnique({
