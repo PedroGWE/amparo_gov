@@ -171,6 +171,20 @@ export class PublicBeneficiaryProfileController {
   constructor(private profileInvites: ProfileInvitesService) {}
 
   @Public()
+  @Get(':slug/:beneficiaryId/:token')
+  @Header('Cache-Control', 'private, no-store')
+  previewForBeneficiary(@Param('slug') slug: string, @Param('beneficiaryId') beneficiaryId: string, @Param('token') token: string) {
+    return this.profileInvites.preview(slug, token, beneficiaryId)
+  }
+
+  @Public()
+  @Post(':slug/:beneficiaryId/:token')
+  @Header('Cache-Control', 'private, no-store')
+  completeForBeneficiary(@Param('slug') slug: string, @Param('beneficiaryId') beneficiaryId: string, @Param('token') token: string, @Body() dto: CompleteProfileDto) {
+    return this.profileInvites.complete(slug, token, dto, beneficiaryId)
+  }
+
+  @Public()
   @Get(':slug/:token')
   @Header('Cache-Control', 'private, no-store')
   preview(@Param('slug') slug: string, @Param('token') token: string) {
