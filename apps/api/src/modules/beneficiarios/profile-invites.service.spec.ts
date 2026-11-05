@@ -22,6 +22,7 @@ describe('ProfileInvitesService', () => {
     }
     const result = await new ProfileInvitesService(prisma as never).create('tenant-1', 'student-1')
     expect(result.token).toMatch(/^[A-Za-z0-9_-]{43}$/)
+    expect(result.id).toBe('student-1')
     expect(tx.beneficiaryProfileInvite.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { beneficiary_id: 'student-1', tenant_id: 'tenant-1', used_at: null } }))
     expect(tx.beneficiaryProfileInvite.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ beneficiary_id: 'student-1', tenant_id: 'tenant-1' }) }))
     expect(JSON.stringify(tx.beneficiaryProfileInvite.create.mock.calls)).not.toContain(result.token)
@@ -33,6 +34,15 @@ describe('ProfileInvitesService', () => {
     await expect(service.preview('other', 'a'.repeat(43))).rejects.toBeInstanceOf(NotFoundException)
     prisma.beneficiaryProfileInvite.findUnique.mockResolvedValueOnce({ id: 'invite-1', tenant_id: 'tenant-1', used_at: null, expires_at: new Date(Date.now() + 60_000), beneficiary: { ...beneficiary, deleted_at: new Date() } })
     await expect(service.preview('instituto', 'a'.repeat(43))).rejects.toBeInstanceOf(NotFoundException)
+  })
+
+  it('binds a link with an ID to its beneficiary while keeping legacy links valid', async () => {
+    const prisma = { beneficiaryProfileInvite: { findUnique: jest.fn().mockResolvedValue({ id: 'invite-1', beneficiary_id: beneficiary.id, tenant_id: beneficiary.tenant_id, used_at: null, expires_at: new Date(Date.now() + 60_000), beneficiary }) } }
+    const service = new ProfileInvitesService(prisma as never)
+    await expect(service.preview('instituto', 'a'.repeat(43), 'another-student')).rejects.toBeInstanceOf(NotFoundException)
+    await expect(service.complete('instituto', 'a'.repeat(43), { name: 'Ana Silva', termo_consentimento: true, autorizacao_uso_imagem: false }, 'another-student')).rejects.toBeInstanceOf(NotFoundException)
+    expect((await service.preview('instituto', 'a'.repeat(43), 'student-1')).id).toBe('student-1')
+    expect((await service.preview('instituto', 'a'.repeat(43))).id).toBe('student-1')
   })
 
   it('consumes the link once and does not allow a second write', async () => {

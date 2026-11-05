@@ -741,7 +741,7 @@ export default function BeneficiariosPage() {
     setInvitingId(b.id)
     try {
       const invite = await beneficiariosService.createProfileInvite(b.id)
-      const url = `${window.location.origin}/${encodeURIComponent(invite.slug)}/completar-perfil/${encodeURIComponent(invite.token)}`
+      const url = `${window.location.origin}/${encodeURIComponent(invite.slug)}/completar-perfil/${encodeURIComponent(invite.id)}/${encodeURIComponent(invite.token)}`
       setProfileLink({ name: b.name, url, expires: invite.expires_at })
     } catch {
       setEditError('Não foi possível gerar o link de perfil. Tente novamente.')

@@ -31,7 +31,8 @@ export function middleware(request: NextRequest) {
     pathname === '/site.webmanifest' ||
     pathname === '/apple-touch-icon.png' ||
     /^\/[^/]+\/inscricao\/?$/.test(pathname) ||
-    /^\/[^/]+\/completar-perfil\/[^/]+\/?$/.test(pathname)
+    /^\/[^/]+\/completar-perfil\/[^/]+\/?$/.test(pathname) ||
+    /^\/[^/]+\/completar-perfil\/[^/]+\/[^/]+\/?$/.test(pathname)
 
   if (!isPublic && !request.cookies.get('refresh_token')) {
     const loginUrl = publicUrl

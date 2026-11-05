@@ -27,25 +27,26 @@ export class ProfileInvitesService {
         data: { beneficiary_id: beneficiaryId, tenant_id: tenantId, token_hash: hash(token), expires_at: expiresAt },
       })
     })
-    return { token, slug: beneficiary.tenant.slug, expires_at: expiresAt }
+    return { token, id: beneficiary.id, slug: beneficiary.tenant.slug, expires_at: expiresAt }
   }
 
-  private async findValid(slug: string, token: string) {
+  private async findValid(slug: string, token: string, beneficiaryId?: string) {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new NotFoundException('Link inválido ou expirado')
     const invite = await this.prisma.beneficiaryProfileInvite.findUnique({
       where: { token_hash: hash(token) },
       include: { beneficiary: { include: { tenant: { select: { slug: true } }, responsaveis: { orderBy: { created_at: 'asc' }, take: 1 } } } },
     })
-    if (!invite || invite.used_at || invite.expires_at <= new Date() || invite.beneficiary.deleted_at ||
+    if (!invite || (beneficiaryId && invite.beneficiary_id !== beneficiaryId) || invite.used_at || invite.expires_at <= new Date() || invite.beneficiary.deleted_at ||
         invite.beneficiary.tenant_id !== invite.tenant_id || invite.beneficiary.tenant.slug !== slug) {
       throw new NotFoundException('Link inválido ou expirado')
     }
     return invite
   }
 
-  async preview(slug: string, token: string) {
-    const { beneficiary: b } = await this.findValid(slug, token)
+  async preview(slug: string, token: string, beneficiaryId?: string) {
+    const { beneficiary: b } = await this.findValid(slug, token, beneficiaryId)
     return {
+      id: b.id,
       name: b.name, cpf: b.cpf, birth_date: b.birth_date, gender: b.gender,
       telefone: b.telefone, email: b.email, rg_certidao: b.rg_certidao,
       cep: b.cep, logradouro: b.logradouro, numero: b.numero, complemento: b.complemento,
@@ -65,8 +66,8 @@ export class ProfileInvitesService {
     }
   }
 
-  async complete(slug: string, token: string, dto: CompleteProfileDto) {
-    const invite = await this.findValid(slug, token)
+  async complete(slug: string, token: string, dto: CompleteProfileDto, beneficiaryId?: string) {
+    const invite = await this.findValid(slug, token, beneficiaryId)
     if (!dto.termo_consentimento) throw new BadRequestException('Confirme o consentimento para enviar o perfil')
     const hasResponsavel = !!(dto.responsavel_nome || dto.responsavel_parentesco || dto.responsavel_cpf || dto.responsavel_telefone || dto.responsavel_email)
     if (hasResponsavel && (!dto.responsavel_nome?.trim() || !dto.responsavel_parentesco)) {
