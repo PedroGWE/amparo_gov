@@ -12,7 +12,7 @@ const student: JwtPayload = { ...teacher, sub: 'student', permissions: ['conecta
 
 function setup() {
   const db = {
-    professor: { count: jest.fn().mockResolvedValue(1) },
+    professor: { count: jest.fn().mockResolvedValue(0) },
     turma: { findMany: jest.fn().mockResolvedValue([{ id: 'own-class', _count: { aulas: 3 } }]) },
     educaAula: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(2) },
     atividade: {

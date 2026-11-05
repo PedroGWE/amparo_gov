@@ -52,7 +52,8 @@ export interface Catalog {
     user_id: string | null
     user: { student_code: string } | null
   }[]
-  professores: { id: string; nome_completo: string; user_id: string | null }[]
+  professores: { id: string; nome_completo: string; user_id: string | null; user: { email: string; status: string } | null }[]
+  contas_professores: { id: string; name: string; email: string; status: string }[]
   projects: { id: string; name: string }[]
 }
 

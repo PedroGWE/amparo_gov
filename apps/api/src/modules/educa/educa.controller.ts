@@ -1,9 +1,10 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import '@fastify/multipart'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtPayload } from '../auth/types/jwt-payload'
 import { EducaService } from './educa.service'
+import { EducaAccessGuard } from './educa-access.guard'
 import {
   AccountDto,
   ActivityDto,
@@ -17,6 +18,7 @@ import {
   StartLessonDto,
 } from './educa.dto'
 @Controller('educa')
+@UseGuards(EducaAccessGuard)
 export class EducaController {
   constructor(private service: EducaService) {}
   @Get('resumo') overview(@CurrentUser() u: JwtPayload) {

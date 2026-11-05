@@ -16,7 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator'
 export class AccountDto {
-  @IsIn(['aluno', 'professor']) perfil: 'aluno' | 'professor'
+  @IsIn(['professor']) perfil: 'aluno' | 'professor'
   @IsString() @MinLength(1) registro_id: string
   @IsOptional() @IsEmail() email?: string
   @IsOptional() @Matches(/^[A-Za-z0-9-]{3,30}$/) matricula?: string

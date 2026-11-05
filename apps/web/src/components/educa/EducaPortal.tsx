@@ -56,14 +56,8 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
   const allowed: EducaSection[] = [
     'inicio',
     'turmas',
-    'aulas',
-    'atividades',
-    'materiais',
-    'perfil',
-    ...(teacher
-      ? (['planejamento', 'chamada', 'alunos'] as EducaSection[])
-      : (['frequencia'] as EducaSection[])),
-    ...(manager ? (['acessos', 'relatorios'] as EducaSection[]) : []),
+    'chamada',
+    ...(manager ? (['acessos', 'relatorios', 'alunos'] as EducaSection[]) : []),
   ]
   const requestedSection = typeof router.query.aba === 'string' ? router.query.aba : 'inicio'
   const section = allowed.includes(requestedSection as EducaSection)
@@ -154,7 +148,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
       { shallow: true },
     )
   }
-  function openClass(id: string, next: EducaSection = 'aulas', activityId?: string) {
+  function openClass(id: string, next: EducaSection = 'chamada', activityId?: string) {
     navigate(next, id, activityId ? { atividade: activityId } : undefined)
   }
   useEffect(() => {
@@ -281,7 +275,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                   {section === 'turmas' && manager ? 'Turmas da instituição' : titles[section]}
                 </h1>
                 <p>
-                  {section === 'atividades'
+                    {section === 'atividades'
                     ? teacher
                       ? 'Organize propostas e acompanhe cada entrega.'
                       : 'Aprenda, faça suas descobertas e compartilhe com o professor.'
@@ -296,7 +290,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                             : section === 'frequencia'
                               ? 'Cada encontro faz parte da sua jornada.'
                               : section === 'turmas'
-                                ? 'Escolha uma turma e vamos começar.'
+                              ? 'Escolha uma turma para registrar a chamada.'
                                 : section === 'perfil'
                                   ? 'Seu acesso, sua instituição e seu espaço.'
                                   : 'Cuide dos acessos e acompanhe sua instituição.'}
@@ -315,26 +309,14 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                 )}
                 {d?.canTeach &&
                   hasClass &&
-                  ['aulas', 'planejamento', 'materiais', 'atividades', 'chamada'].includes(section) && (
+                  section === 'chamada' && (
                     <button
                       type="button"
                       className="edu-btn edu-btn-primary"
-                      onClick={() =>
-                        setComposer(
-                          section === 'materiais'
-                            ? 'material'
-                            : section === 'atividades'
-                              ? 'atividade'
-                              : 'aula',
-                        )
-                      }
+                      onClick={() => setComposer('aula')}
                     >
                       <Plus size={17} />
-                      {section === 'materiais'
-                        ? 'Novo material'
-                        : section === 'atividades'
-                          ? 'Nova atividade'
-                          : section === 'chamada' ? 'Nova aula para chamada' : 'Agendar aula'}
+                      Nova aula para chamada
                     </button>
                   )}
               </div>
@@ -374,7 +356,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                         key={item.id}
                         type="button"
                         className="edu-class-card"
-                        onClick={() => openClass(item.id, section === 'turmas' ? 'aulas' : section)}
+                        onClick={() => openClass(item.id, section === 'turmas' ? 'chamada' : section)}
                       >
                         <div className="edu-class-card-cover">
                           <span>
@@ -431,9 +413,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                   <strong>{d.turma.nome}</strong>
                   <span>·</span>
                   <span>{d.aulas.length} aulas</span>
-                  <span>·</span>
-                  <span>{d.materiais.length} materiais</span>
-                  {d.canTeach && (
+                  {manager && (
                     <button
                       type="button"
                       className="edu-text-button"
@@ -612,7 +592,7 @@ export default function EducaPortal({ manager = false }: { manager?: boolean }) 
                     ) : (
                       <EmptyState
                         title="A primeira chamada começa com uma aula"
-                        text="Agende um encontro no Planejamento para registrar a presença dos alunos."
+                        text="Crie uma aula para registrar a presença dos alunos."
                         action={
                           <button
                             type="button"

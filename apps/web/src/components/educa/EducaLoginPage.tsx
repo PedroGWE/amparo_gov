@@ -6,18 +6,15 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  GraduationCap,
   Loader2,
   LockKeyhole,
   School,
   ShieldCheck,
-  Users,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { EducaBrand } from './EducaBrand'
 
 export default function EducaLoginPage() {
-  const [perfil, setPerfil] = useState<'aluno' | 'professor'>('aluno')
   const [institute, setInstitute] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [help, setHelp] = useState(false)
@@ -37,11 +34,11 @@ export default function EducaLoginPage() {
         String(data.get('identificador')),
         String(data.get('senha')),
         institute.trim().toLowerCase(),
-        perfil,
+        'professor',
       )
     } catch {
       setError(
-        'Não foi possível entrar. Confira o instituto, sua matrícula ou e-mail e a senha. Verifique também o perfil selecionado.',
+        'Não foi possível entrar. Confira o instituto, seu e-mail e a senha de professor.',
       )
     } finally {
       setBusy(false)
@@ -77,36 +74,12 @@ export default function EducaLoginPage() {
           <div className="edu-login-mobile-brand">
             <EducaBrand />
           </div>
-          <p className="edu-eyebrow">SEU ESPAÇO DE APRENDIZAGEM</p>
-          <h2 id="edu-login-title">Que bom te ver aqui!</h2>
+          <p className="edu-eyebrow">ACESSO DO PROFESSOR</p>
+          <h2 id="edu-login-title">Acesse suas chamadas</h2>
           <p className="edu-login-intro">
-            Entre para acompanhar suas turmas e continuar de onde parou.
+            Entre com o e-mail e a senha fornecidos pela instituição para registrar a presença das suas turmas.
           </p>
-          <div className="edu-profile-switch" aria-label="Escolha seu perfil">
-            <button
-              type="button"
-              aria-pressed={perfil === 'aluno'}
-              onClick={() => {
-                setPerfil('aluno')
-                setError('')
-              }}
-            >
-              <GraduationCap size={17} />
-              Sou aluno
-            </button>
-            <button
-              type="button"
-              aria-pressed={perfil === 'professor'}
-              onClick={() => {
-                setPerfil('professor')
-                setError('')
-              }}
-            >
-              <Users size={17} />
-              Sou professor
-            </button>
-          </div>
-          <form onSubmit={submit} className="edu-login-form" aria-label={`Acesso de ${perfil}`}>
+          <form onSubmit={submit} className="edu-login-form" aria-label="Acesso de professor">
             <label className="edu-field" htmlFor="edu-institute">
               <span>Instituto</span>
               <input
@@ -127,14 +100,13 @@ export default function EducaLoginPage() {
               </small>
             </label>
             <label className="edu-field" htmlFor="edu-identifier">
-              <span>{perfil === 'aluno' ? 'Sua matrícula' : 'Seu e-mail'}</span>
+              <span>Seu e-mail</span>
               <input
-                key={perfil}
                 id="edu-identifier"
                 name="identificador"
-                type={perfil === 'aluno' ? 'text' : 'email'}
+                type="email"
                 className="input"
-                placeholder={perfil === 'aluno' ? 'Digite sua matrícula' : 'voce@instituto.org.br'}
+                placeholder="voce@instituto.org.br"
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
@@ -194,9 +166,7 @@ export default function EducaLoginPage() {
           </button>
           {help && (
             <p id="edu-login-help" className="edu-login-help-text">
-              {perfil === 'aluno'
-                ? 'Sua matrícula e senha são fornecidas pela instituição.'
-                : 'Use o e-mail e a senha cadastrados pelo gestor.'}{' '}
+              Use o e-mail e a senha cadastrados pelo gestor.{' '}
               Esqueceu a senha ou não recebeu seu acesso? Fale com o gestor do seu instituto para
               solicitar novas credenciais.
             </p>

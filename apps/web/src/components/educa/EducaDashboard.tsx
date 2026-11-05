@@ -43,6 +43,32 @@ export function EducaDashboard({
   const activities = overview?.atividades.filter((item) => item.pendentes > 0) ?? []
   const searchMatch = (value: string) =>
     value.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'))
+  if (teacher) return (
+    <>
+      <div className="edu-page-heading">
+        <div><p className="edu-eyebrow">CHAMADA DOS PROFESSORES</p><h1>Olá, {firstName}!</h1>
+          <p>Escolha sua turma, inicie a aula e registre a presença de cada aluno.</p></div>
+      </div>
+      {loading && <Loading text="Carregando suas turmas..." />}
+      <section className="edu-start-home" aria-labelledby="edu-attendance-home-title">
+        <div><p className="edu-eyebrow">PRÓXIMA ETAPA</p><h2 id="edu-attendance-home-title">Abrir chamada</h2>
+          <p>{next ? `${next.titulo} · ${next.turma.nome} · ${shortDate(next.inicio)}` : classes?.length ? 'Selecione sua turma para começar.' : 'Aguarde o gestor vincular sua turma.'}</p></div>
+        <button type="button" className="edu-btn edu-btn-primary" disabled={!next && !classes?.length}
+          onClick={() => openClass(next?.turma.id ?? classes![0].id, 'chamada')}><ClipboardCheck size={18} />Abrir chamada</button>
+      </section>
+      <Panel title={manager ? 'Turmas da instituição' : 'Minhas turmas'}>
+        <div className="edu-class-previews">{classes?.filter(item => searchMatch(item.nome)).map((item, index) => (
+          <button type="button" key={item.id} className={`edu-class-preview edu-preview-${index % 3}`}
+            onClick={() => openClass(item.id, 'chamada')}>
+            <span className="edu-preview-icon"><ClipboardCheck size={23} /></span><h3>{item.nome}</h3>
+            <p>{item._count.matriculas} alunos · {item._count.aulas} aulas</p>
+            <span className="edu-preview-link">Fazer chamada <ArrowRight size={16} /></span>
+          </button>
+        ))}</div>
+        {classes?.length === 0 && <EmptyState title="Nenhuma turma vinculada" text="Peça ao gestor para vincular sua conta a uma turma e matricular os alunos." />}
+      </Panel>
+    </>
+  )
   return (
     <>
       <div className="edu-page-heading">

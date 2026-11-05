@@ -24,6 +24,7 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    if (dto.portal === 'aluno') throw new UnauthorizedException('O Educa está disponível inicialmente para professores.')
     const tenant = await this.prisma.tenant.findUnique({ where: { slug: dto.tenantSlug } })
     if (!tenant || tenant.deleted_at) throw new NotFoundException('Tenant não encontrado')
 
@@ -43,6 +44,7 @@ export class AuthService {
     const permissions = this.extractPermissions(user.user_roles)
     const allowed = permissions.includes('*') || permissions.includes(dto.portal === 'aluno' ? 'conecta:student' : 'conecta:teacher')
     if ((dto.portal === 'aluno' || dto.portal === 'professor') && !allowed) throw new UnauthorizedException('Seu cadastro não possui acesso a este portal.')
+    if (dto.portal === 'professor' && !permissions.includes('conecta:teacher')) throw new UnauthorizedException('Seu cadastro não possui acesso de professor.')
     if (dto.portal === 'aluno' && !await this.prisma.beneficiary.count({ where: { user_id: user.id, tenant_id: tenant.id, status: 'ATIVO' } })) throw new UnauthorizedException('Vínculo de aluno inativo.')
     if (dto.portal === 'professor' && await this.prisma.professor.count({ where: { user_id: user.id, tenant_id: tenant.id, status: { not: 'ATIVO' } } })) throw new UnauthorizedException('Vínculo de professor inativo.')
     const tokens = await this.generateTokens(user.id, tenant.id, user.email, permissions)

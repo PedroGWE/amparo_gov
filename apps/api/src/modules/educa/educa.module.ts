@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { EducaController } from './educa.controller'
 import { EducaService } from './educa.service'
-@Module({ controllers: [EducaController], providers: [EducaService] })
+import { EducaAccessGuard } from './educa-access.guard'
+@Module({ controllers: [EducaController], providers: [EducaService, EducaAccessGuard] })
 export class EducaModule {}

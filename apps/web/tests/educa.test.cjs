@@ -29,6 +29,8 @@ test('legacy education links preserve their section and class and require a sess
   assert.equal((await redirect(context)).redirect.destination, '/instituto/professor?aba=chamada&turma=class%2Fa')
   context.req.cookies = {}
   assert.equal((await redirect(context)).redirect.destination, '/educa')
+  context.req.cookies = { refresh_token: 'session' }
+  assert.equal((await educationRedirect('aluno', 'frequencia')(context)).redirect.destination, '/educa')
 })
 
 test('Educa serves its own favicon and sends expired sessions to the education login', async () => {
@@ -54,20 +56,20 @@ test('Educa serves its own favicon and sends expired sessions to the education l
   assert.equal(middleware(request('app.amparogov.org', '/instituto/dashboard', 'http://localhost:3000')).url, 'https://app.amparogov.org/login')
 })
 
-test('student and teacher navigation expose the appropriate workflows', () => {
+test('Educa navigation only exposes attendance and manager setup', () => {
   const { EducaLayout } = load('src/components/educa/EducaLayout.tsx', {
     'next/link': { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) },
     'next/image': { __esModule: true, default: ({ unoptimized, ...props }) => React.createElement('img', props) },
     '@/components/ui/Modal': { Modal: () => null },
   })
   const props = { manager: false, section: 'inicio', navigate: () => {}, userName: 'Pessoa', institute: 'Instituto', tenant: 'org', search: '', setSearch: () => {}, logout: async () => {} }
-  const student = renderToStaticMarkup(React.createElement(EducaLayout, { ...props, teacher: false }))
-  assert.match(student, /Minhas atividades|Minha frequência/)
-  assert.doesNotMatch(student, />Chamada<|>Planejamento<|>Acessos</)
   const teacher = renderToStaticMarkup(React.createElement(EducaLayout, { ...props, teacher: true }))
-  assert.match(teacher, />Planejamento</)
   assert.match(teacher, />Chamada</)
-  assert.doesNotMatch(teacher, />Minha frequência<|>Acessos</)
+  assert.match(teacher, /Minhas turmas/)
+  assert.doesNotMatch(teacher, />Planejamento<|>Atividades<|>Biblioteca<|>Acessos</)
+  const manager = renderToStaticMarkup(React.createElement(EducaLayout, { ...props, teacher: true, manager: true }))
+  assert.match(manager, />Acessos<|>Chamadas recebidas</)
+  assert.doesNotMatch(manager, />Planejamento<|>Atividades<|>Biblioteca</)
 })
 
 test('an evaluated activity keeps its result visible even after the deadline', () => {
