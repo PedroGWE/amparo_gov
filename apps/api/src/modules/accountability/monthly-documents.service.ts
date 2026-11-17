@@ -42,14 +42,16 @@ export class MonthlyDocumentsService {
       `Saldo bancário: não conciliado`, ...view.financial.entries.map(e => `${e.date.toISOString().slice(0, 10)} | ${e.description} | ${e.status} | ${e.type} | ${e.amount}`)]
     if (kind === 'OBJETO') {
       const narrative = (view.month.execution_data ?? {}) as { activities?: string; results?: string; deviations?: string; justifications?: string; source_ids?: string[] }
+      const media = await this.monthly.media(view.month.tenant_id, view.month.instrument_id, false)
       return [...header, `Atividades registradas: ${view.attendance.reduce((n, t) => n + t.aulas.filter(a => a.status === 'REALIZADA').length, 0)}`,
       `Beneficiários únicos: ${new Set(view.attendance.flatMap(t => t.beneficiarios.map(b => b.beneficiary_id))).size}`,
-      'Comparação com metas pactuadas: indisponível até cadastrar o plano de trabalho e as metas confirmadas.',
+      ...(view.indicatorResults ?? []).map(row => `${row.indicator.name}: previsto ${row.results[0]?.expected ?? row.indicator.target ?? 'não informado'} ${row.indicator.unit ?? ''}; realizado ${row.results[0]?.actual ?? 'sem dados'}; método ${row.results[0]?.method ?? 'não informado'}; fonte ${row.results[0]?.source ?? 'não informada'}; evidências ${row.results[0]?.evidence_ids.join(', ') ?? 'nenhuma'}`),
       `Atividades descritas: ${narrative.activities || 'revisão humana pendente'}`,
       `Resultados: ${narrative.results || 'revisão humana pendente'}`,
       `Desvios: ${narrative.deviations || 'revisão humana pendente'}`,
       `Justificativas: ${narrative.justifications || 'revisão humana pendente'}`,
-      `Fontes: ${narrative.source_ids?.join(', ') || 'não vinculadas'}`]
+      `Fontes: ${narrative.source_ids?.join(', ') || 'não vinculadas'}`,
+      ...media.map(m => `Mídia ${m.kind}: documento ${m.document_id}; ${m.recorded_on.toISOString().slice(0, 10)}; ${m.location}; ${m.scope}; ${m.description}`)]
     }
     return [...header, ...view.month.requirements.map(r => `${r.rule.title} | ${r.status} | ${r.rule.origin} | ${r.rule.source_reference ?? 'fonte pendente'}`)]
   }

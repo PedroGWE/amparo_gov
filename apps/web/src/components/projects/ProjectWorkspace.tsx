@@ -38,6 +38,7 @@ import { Badge } from '@/components/ui/Badge'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { ProjectManagementPanel } from './ProjectManagementPanel'
 import { ProjectFundingPanel } from './ProjectFundingPanel'
+import MonthlyWorkspace from '@/components/accountability/MonthlyWorkspace'
 import {
   projectsService,
   type ProjectDetails,
@@ -66,6 +67,7 @@ const SECTIONS = [
   { id: 'rotina', label: 'Rotina', icon: ClipboardList },
   { id: 'metas', label: 'Metas e resultados', icon: Target },
   { id: 'equipe', label: 'Equipe', icon: UserRound },
+  { id: 'prestacao', label: 'Prestação de Contas', icon: ClipboardList },
   { id: 'dados', label: 'Dados do projeto', icon: Settings2 },
 ] as const
 type Section = (typeof SECTIONS)[number]['id']
@@ -359,7 +361,7 @@ export default function ProjectWorkspace({
           aria-label="Seções do projeto"
           className="flex flex-wrap gap-1 border-t border-gray-100 bg-gray-50/70 p-2 sm:px-4"
         >
-          {SECTIONS.map(({ id, label, icon: Icon }) => (
+          {SECTIONS.filter(section => section.id !== 'prestacao' || can('accountability:read')).map(({ id, label, icon: Icon }) => (
             <Link
               key={id}
               href={sectionHref(id)}
@@ -569,6 +571,8 @@ export default function ProjectWorkspace({
           </div>
         </div>
       )}
+
+      {activeSection === 'prestacao' && can('accountability:read') && <MonthlyWorkspace projectId={projectId} />}
 
       {activeSection === 'planejamento' && (
         <div className="space-y-5">

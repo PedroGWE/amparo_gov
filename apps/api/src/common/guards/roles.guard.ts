@@ -34,6 +34,7 @@ export class RolesGuard implements CanActivate {
         'EducaController',
         'ConectaTeacherController',
         'ConectaStudentController',
+        'MonthlyController',
       ].includes(controllerName)
     )
       return false

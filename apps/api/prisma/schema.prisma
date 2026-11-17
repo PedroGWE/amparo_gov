@@ -2012,6 +2012,10 @@ model AccountabilityInstrument {
   updated_at DateTime @updatedAt
   requirements MonthlyRequirementRule[]
   competences MonthlyCompetence[]
+  expenses AccountabilityExpense[]
+  official_deliveries OfficialDelivery[]
+  indicator_results AccountabilityIndicatorResult[]
+  media AccountabilityMedia[]
   @@unique([tenant_id, project_id, number])
   @@index([tenant_id, project_id])
   @@map("accountability_instruments")
@@ -2081,9 +2085,133 @@ model MonthlyCompetence {
   documents MonthlyGeneratedDocument[]
   point_entries MonthlyPointEntry[]
   events MonthlyEvent[]
+  validations MonthlyValidation[]
   @@unique([tenant_id, instrument_id, month, revision])
   @@index([tenant_id, project_id, month])
   @@map("monthly_competences")
+}
+
+model AccountabilityExpense {
+  id String @id @default(cuid())
+  tenant_id String
+  instrument_id String
+  transaction_id String
+  work_plan_version String?
+  budget_line String?
+  funding_source String @default("PARCERIA")
+  account_reference String?
+  scope String?
+  classification String @default("REVISAO")
+  classification_basis String?
+  documents Json @default("{}")
+  release_status String @default("PREPARACAO")
+  released_by String?
+  released_at DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  instrument AccountabilityInstrument @relation(fields: [instrument_id], references: [id])
+  payments AccountabilityPayment[]
+  @@unique([instrument_id, transaction_id])
+  @@index([tenant_id, instrument_id])
+  @@map("accountability_expenses")
+}
+
+model AccountabilityPayment {
+  id String @id @default(cuid())
+  expense_id String
+  amount Decimal @db.Decimal(18, 2)
+  paid_at DateTime
+  operation_reference String
+  evidence_id String
+  occurrence Boolean @default(false)
+  justification String?
+  statement_id String? @unique
+  reconciled_at DateTime?
+  created_by String
+  created_at DateTime @default(now())
+  expense AccountabilityExpense @relation(fields: [expense_id], references: [id])
+  @@unique([expense_id, operation_reference])
+  @@map("accountability_payments")
+}
+
+model MonthlyValidation {
+  id String @id @default(cuid())
+  competence_id String
+  stage String
+  status String
+  actor_id String
+  role String
+  comment String?
+  revision Int
+  created_at DateTime @default(now())
+  competence MonthlyCompetence @relation(fields: [competence_id], references: [id])
+  @@index([competence_id, stage, created_at])
+  @@map("monthly_validations")
+}
+
+model OfficialDelivery {
+  id String @id @default(cuid())
+  instrument_id String
+  title String
+  period String
+  status String @default("EM_PREPARACAO")
+  due_at DateTime?
+  legal_basis String?
+  responsible_id String?
+  required_documents Json @default("[]")
+  protocol_number String?
+  protocol_at DateTime?
+  protocol_evidence_id String?
+  package_version Int?
+  decision_document_id String?
+  history Json @default("[]")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  instrument AccountabilityInstrument @relation(fields: [instrument_id], references: [id])
+  @@unique([instrument_id, period, title])
+  @@map("official_deliveries")
+}
+
+model AccountabilityIndicatorResult {
+  id String @id @default(cuid())
+  tenant_id String
+  instrument_id String
+  indicator_id String
+  month DateTime
+  scope String @default("GERAL")
+  work_plan_version String
+  expected Decimal @db.Decimal(18,4)
+  actual Decimal? @db.Decimal(18,4)
+  method String
+  responsible_id String
+  evidence_ids String[] @default([])
+  justification String?
+  source String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  instrument AccountabilityInstrument @relation(fields: [instrument_id], references: [id])
+  @@unique([instrument_id, indicator_id, month, scope])
+  @@index([tenant_id, instrument_id, month])
+  @@map("accountability_indicator_results")
+}
+
+model AccountabilityMedia {
+  id String @id @default(cuid())
+  tenant_id String
+  instrument_id String
+  lesson_id String?
+  document_id String
+  kind String
+  recorded_on DateTime
+  location String
+  scope String
+  description String
+  public_release Boolean @default(false)
+  recorded_by String
+  created_at DateTime @default(now())
+  instrument AccountabilityInstrument @relation(fields: [instrument_id], references: [id])
+  @@index([tenant_id, instrument_id, recorded_on])
+  @@map("accountability_media")
 }
 
 model MonthlyRequirement {
